@@ -153,3 +153,10 @@ class DetalleConciertoTests(DatosDePrueba):
     def test_slug_inexistente_responde_404(self):
         respuesta = self.client.get(reverse("concierto-detalle", args=["no-existe"]))
         self.assertEqual(respuesta.status_code, 404)
+
+
+class SaludTests(APITestCase):
+    def test_responde_sin_consultar_la_base(self):
+        with self.assertNumQueries(0):
+            respuesta = self.client.get(reverse("salud"))
+        self.assertEqual(respuesta.json(), {"ok": True})

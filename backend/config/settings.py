@@ -22,6 +22,9 @@ def variable_requerida(nombre):
 SECRET_KEY = variable_requerida("DJANGO_SECRET_KEY")
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost").split(",") if h.strip()]
+# Render define esta variable con el dominio del servicio (quien-toca-api.onrender.com).
+if render_host := os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(render_host)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -38,6 +41,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise sirve los archivos estáticos (CSS del panel) sin un servidor aparte.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     # CORS debe ir antes de CommonMiddleware para agregar sus cabeceras a todas las respuestas.
     "corsheaders.middleware.CorsMiddleware",
@@ -69,7 +74,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 # Una sola variable con toda la conexión: postgres://usuario:clave@host:puerto/base.
 # Es el mismo formato que entrega Neon, así producción no cambia este código.
-DATABASES = {"default": dj_database_url.parse(variable_requerida("DATABASE_URL"), conn_max_age=600)}
+# conn_health_checks: Neon suspende la base tras 5 minutos sin uso; antes de reusar
+# una conexión se comprueba que siga viva.
+DATABASES = {
+    "default": dj_database_url.parse(
+        variable_requerida("DATABASE_URL"), conn_max_age=600, conn_health_checks=True
+    )
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -84,6 +95,17 @@ USE_I18N = True
 USE_TZ = True  # se guarda en UTC y se muestra en la hora de México
 
 STATIC_URL = "static/"
+# collectstatic junta aquí los estáticos; WhiteNoise los sirve comprimidos y con
+# nombres versionados (se pueden guardar en caché para siempre).
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        if not DEBUG
+        else "django.contrib.staticfiles.storage.StaticFilesStorage"
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -100,3 +122,27 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     o.strip() for o in os.environ.get("CORS_ORIGENES_PERMITIDOS", "").split(",") if o.strip()
 ]
+
+if not DEBUG:
+    # Render atiende HTTPS y pasa la petición a Django por HTTP; esta cabecera
+    # le dice a Django que el visitante sí llegó por HTTPS.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    # La ruta de salud la llama Render por HTTP interno: no se redirige.
+    SECURE_REDIRECT_EXEMPT = [r"^api/salud/$"]
+    SESSION_COOKIE_SECURE = True  # las cookies del panel solo viajan por HTTPS
+    CSRF_COOKIE_SECURE = True
+    # HSTS: el navegador recuerda usar siempre HTTPS. Una hora para empezar;
+    # súbelo (p. ej. a 31536000, un año) cuando todo funcione bien.
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SEGUNDOS", "3600"))
+    # Subdominios y lista de precarga solo tienen sentido con un dominio propio,
+    # no con quien-toca-api.onrender.com.
+    SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
+
+# Registra en la consola (los logs de Render) los errores 500 con su detalle.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"consola": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["consola"], "level": "WARNING"},
+}

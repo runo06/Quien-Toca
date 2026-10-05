@@ -1,11 +1,17 @@
 from datetime import date
 
 from django.db.models import Count, F, Q
+from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 
 from .models import Ciudad, Concierto, inicio_de_hoy
 from .serializers import CiudadSerializer, ConciertoDetalleSerializer, ConciertoListaSerializer
+
+
+def salud(request):
+    """GET /api/salud/: responde sin tocar la base. Render la usa para saber si el servidor ya despertó."""
+    return JsonResponse({"ok": True})
 
 
 class CiudadesView(generics.ListAPIView):

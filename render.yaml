@@ -1,0 +1,27 @@
+# Blueprint de Render: describe el backend para crearlo con un clic
+# (Render > New > Blueprint > este repositorio). Plan gratuito.
+services:
+  - type: web
+    name: quien-toca-api
+    runtime: python
+    plan: free
+    region: ohio  # la más cercana a Neon us-east-2 (Ohio)
+    rootDir: backend  # Python 3.13, según backend/.python-version
+    # El plan gratuito no tiene "pre-deploy": las migraciones van al final del build.
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    # El plan gratuito tiene 512 MB de memoria: dos procesos de gunicorn bastan.
+    startCommand: gunicorn config.wsgi --workers 2 --timeout 60
+    healthCheckPath: /api/salud/
+    autoDeploy: true  # se publica solo en cada push a main
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true  # Render inventa una clave larga y aleatoria
+      # sync: false = Render te la pide al crear el servicio; no vive en Git.
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGENES_PERMITIDOS
+        sync: false
+      - key: TICKETMASTER_API_KEY
+        sync: false

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
+import AvisoDespertando from './componentes/AvisoDespertando.jsx';
 import Encabezado from './componentes/Encabezado.jsx';
 import PiePagina from './componentes/PiePagina.jsx';
 import { ProveedorCiudades } from './contexto/ciudades.jsx';
@@ -48,6 +49,7 @@ export default function App() {
           </Routes>
         </main>
         <PiePagina />
+        <AvisoDespertando />
       </ProveedorCiudades>
     </BrowserRouter>
   );

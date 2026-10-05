@@ -6,6 +6,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+backend/staticfiles/
 
 # Datos descargados en la fase 0
 fase0/muestras/

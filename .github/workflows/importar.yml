@@ -1,0 +1,38 @@
+# Importa los conciertos de Ticketmaster cada noche directo a la base de Neon.
+# No pasa por Render: así no importa que el servidor gratuito esté dormido.
+name: Importar conciertos
+
+on:
+  schedule:
+    # Todos los días a las 09:00 UTC = 3:00 a. m. en Ciudad de México (sin horario de verano).
+    - cron: "0 9 * * *"
+  workflow_dispatch: # botón "Run workflow" para correrlo a mano
+
+# Nunca dos importaciones al mismo tiempo.
+concurrency:
+  group: importar
+  cancel-in-progress: false
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Secretos del repositorio: Settings > Secrets and variables > Actions.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+      # El comando no firma nada; Django solo exige que la variable exista.
+      DJANGO_SECRET_KEY: clave-solo-para-el-comando-de-importacion
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Importar
+        run: python manage.py importar_ticketmaster

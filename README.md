@@ -1,9 +1,42 @@
 # ¿Quién toca?
 
-Cartelera de próximos conciertos por ciudad, con enlace a la boletera oficial
-y reseñas de quienes ya asistieron. La app no vende boletos.
+Cartelera de próximos conciertos por ciudad (Ciudad de México, Guadalajara,
+Monterrey, Puebla y Tlaxcala), con enlace a la boletera oficial y reseñas de
+quienes ya asistieron. La app no vende boletos.
+
+Los conciertos llegan cada noche desde la API Discovery de Ticketmaster y
+también se pueden capturar a mano desde el panel de administración.
 
 Nombre técnico: `quien-toca`.
+
+| Cartelera | Concierto | En el celular |
+|---|---|---|
+| ![Cartelera de Ciudad de México](docs/capturas/inicio.png) | ![Página de un concierto](docs/capturas/concierto.png) | ![Cartelera en un celular](docs/capturas/celular.png) |
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    V([Visitante]) --> CF["Cloudflare Pages<br/>React + Vite"]
+    CF -- "fetch /api/..." --> R["Render<br/>Django REST + gunicorn"]
+    R --> N[("Neon<br/>PostgreSQL")]
+    GA["GitHub Actions<br/>cada noche"] -- importar_ticketmaster --> N
+    GA -. consulta .-> TM["API Discovery<br/>de Ticketmaster"]
+```
+
+- **Frontend** (`frontend/`): React con React Router. La ciudad y el concierto van
+  en la dirección (`/cdmx`, `/concierto/<slug>`), así el enlace se puede compartir.
+- **Backend** (`backend/`): Django + Django REST Framework. Sirve la API y el panel.
+- **Base de datos**: PostgreSQL (búsqueda sin acentos con `unaccent`).
+- **Importación**: un comando de Django que corre cada noche en GitHub Actions y
+  escribe directo en la base, sin despertar al servidor.
+
+El servidor gratuito de Render se duerme tras 15 minutos sin visitas. Mientras
+despierta (~1 minuto) la página muestra un aviso y reintenta sola:
+
+<img src="docs/capturas/despertando.png" alt="Aviso de servidor despertando" width="260">
+
+Cómo publicarlo paso a paso: [docs/publicacion.md](docs/publicacion.md).
 
 ## Correr el proyecto
 
@@ -30,6 +63,7 @@ docker compose exec backend python manage.py createsuperuser
 
 | Endpoint | Parámetros |
 |---|---|
+| `GET /api/salud/` | — (responde sin tocar la base) |
 | `GET /api/ciudades/` | — |
 | `GET /api/conciertos/` | `ciudad`, `q`, `desde`, `hasta` (AAAA-MM-DD), `orden` (`fecha` o `precio`), `pagina` |
 | `GET /api/conciertos/<slug>/` | — |
@@ -49,6 +83,8 @@ pasaron. Los conciertos capturados a mano no se tocan.
 ```powershell
 docker compose run --rm backend python manage.py test
 ```
+
+En GitHub corren solas en cada push ([`.github/workflows/pruebas.yml`](.github/workflows/pruebas.yml)).
 
 ### Comandos útiles de Docker
 
@@ -73,13 +109,16 @@ backend/
     └── tests/           pruebas con respuestas de ejemplo (sin llamar a la API)
 frontend/src/
 ├── App.jsx              rutas
-├── api.js               llamadas al backend
+├── api.js               llamadas al backend (reintenta mientras el servidor despierta)
 ├── contexto/            ciudades compartidas
 ├── hooks/               usarPeticion, usarCartelera
 ├── paginas/             Inicio, Concierto, No encontrada
-├── componentes/         Boleto, SelectorCiudad, Taquilla, Cartel...
+├── componentes/         Boleto, SelectorCiudad, Taquilla, Cartel, AvisoDespertando...
 ├── utilidades/          fechas, rangos, textos
 └── estilos/base.css     tokens y estilos del prototipo
+.github/workflows/       pruebas en cada push e importación nocturna
+render.yaml              configuración del backend en Render
 fase0/                   exploración inicial de los datos (ver docs/fase0-hallazgos.md)
 docs/diseno/             prototipo visual
+docs/publicacion.md      guía de publicación (Neon, Render, Cloudflare Pages)
 ```

@@ -1,0 +1,61 @@
+# Corre las pruebas del backend y compila el frontend en cada push y pull request.
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    # PostgreSQL de verdad (no SQLite): la búsqueda usa unaccent, que solo existe en PostgreSQL.
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_DB: quien_toca
+          POSTGRES_USER: quien_toca
+          POSTGRES_PASSWORD: clave_de_prueba
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U quien_toca"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://quien_toca:clave_de_prueba@localhost:5432/quien_toca
+      DJANGO_SECRET_KEY: clave-solo-para-pruebas-no-se-usa-en-produccion-0123456789
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: backend/.python-version
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Migraciones al día con los modelos
+        run: python manage.py makemigrations --check --dry-run
+      - name: Pruebas
+        run: python manage.py test
+      - name: Configuración de producción
+        env:
+          DJANGO_DEBUG: "False"
+        run: python manage.py check --deploy --fail-level WARNING
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build

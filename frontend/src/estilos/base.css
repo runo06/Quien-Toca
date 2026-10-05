@@ -81,6 +81,13 @@ main { flex: 1; }
 .esqueleto { display: block; background: var(--boleto-2); border-radius: 6px; animation: latido 1.4s ease-in-out infinite; }
 @keyframes latido { 50% { opacity: 0.55; } }
 
+/* Aviso de servidor despertando: flota abajo, sin tapar el contenido en pantallas chicas */
+.despertando { position: fixed; inset: auto 0 0; z-index: 20; padding: 0 var(--canal) 16px; pointer-events: none; }
+.despertando__caja { max-width: 560px; margin-inline: auto; display: flex; gap: 14px; align-items: flex-start; padding: 14px 18px; background: var(--boleto-2); border: 1.5px solid var(--corte); border-left: 4px solid var(--lima); border-radius: 10px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.45); font-size: 0.95rem; pointer-events: auto; }
+.despertando__caja p { color: var(--papel-2); }
+.despertando__caja strong { color: var(--papel); }
+.despertando__punto { flex: none; width: 12px; height: 12px; margin-top: 5px; border-radius: 50%; background: var(--lima); animation: latido 1.4s ease-in-out infinite; }
+
 /* Franja final y pie */
 .cierre .centro { padding-block: clamp(44px, 6vw, 68px); }
 .cierre h2 { font-size: clamp(2.1rem, 5.4vw, 4rem); }
