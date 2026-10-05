@@ -45,7 +45,7 @@ class ConciertoAdmin(admin.ModelAdmin):
         (None, {"fields": ["titulo", "slug", "artista", "invitados", "recinto", "gira", "genero"]}),
         ("Fecha", {"fields": ["fecha_hora", "hora_por_confirmar", "apertura_puertas", "estado"]}),
         ("Boletos", {"fields": ["url_boletos", "precio_desde", "moneda", "imagen_url"]}),
-        ("Origen", {"fields": ["origen", "id_ticketmaster", "importado_en", "creado_en", "actualizado_en"]}),
+        ("Origen", {"fields": ["origen", "id_ticketmaster", "ids_agrupados", "importado_en", "creado_en", "actualizado_en"]}),
     ]
 
     @admin.display(description="ciudad", ordering="recinto__ciudad__nombre")
@@ -53,7 +53,7 @@ class ConciertoAdmin(admin.ModelAdmin):
         return obj.recinto.ciudad
 
     def get_readonly_fields(self, request, obj=None):
-        campos = ["origen", "id_ticketmaster", "importado_en", "creado_en", "actualizado_en"]
+        campos = ["origen", "id_ticketmaster", "ids_agrupados", "importado_en", "creado_en", "actualizado_en"]
         if obj and obj.origen == Concierto.Origen.TICKETMASTER:
             # La importación nocturna los sobrescribiría: mejor no dejarlos editar.
             campos += list(Concierto.CAMPOS_TICKETMASTER)

@@ -6,7 +6,7 @@ from conciertos.importacion.importador import Importador
 from conciertos.models import Ciudad
 
 MOTIVOS = {
-    "complemento": "Complementos (VIP, estacionamiento, abonos)",
+    "complemento": "Complementos (VIP, estacionamiento, meet & greet)",
     "fuera_de_ciudades": "Fuera de nuestras ciudades",
     "sin_artista": "Sin artista",
     "sin_recinto": "Sin recinto",
@@ -40,6 +40,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Creados: {resumen.creados}"))
         self.stdout.write(f"Actualizados: {resumen.actualizados}")
         self.stdout.write(f"Sin cambios: {resumen.sin_cambios}")
+        self.stdout.write(f"Agrupados con otro evento (abonos, repetidos): {resumen.agrupados}")
         self.stdout.write(f"Descartados: {sum(resumen.descartados.values())}")
         for motivo, cantidad in resumen.descartados.most_common():
             self.stdout.write(f"  {MOTIVOS.get(motivo, motivo)}: {cantidad}")

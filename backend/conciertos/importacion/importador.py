@@ -7,11 +7,12 @@ from collections import Counter
 from dataclasses import dataclass, field
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from conciertos.models import Artista, Ciudad, Concierto, Recinto
 
-from .traducir import Descartado, traducir_evento
+from .traducir import Descartado, agrupar, fusionar, traducir_evento
 
 
 @dataclass
@@ -19,6 +20,7 @@ class Resumen:
     creados: int = 0
     actualizados: int = 0
     sin_cambios: int = 0
+    agrupados: int = 0  # eventos que se sumaron a otro (abonos, funciones repetidas)
     descartados: Counter = field(default_factory=Counter)
     nombres_descartados: list = field(default_factory=list)
     errores: list = field(default_factory=list)
@@ -31,21 +33,31 @@ class Importador:
         self.resumen = Resumen()
 
     def importar(self, eventos):
+        # 1. Traducir todos los eventos y apartar los descartados.
+        traducidos = []
         for evento in eventos:
             try:
-                datos = traducir_evento(evento, self.ciudades)
-                # Cada concierto en su propia transacción: si falla, se deshace
-                # solo ese y la importación sigue con los demás.
-                with transaction.atomic():
-                    resultado = self._guardar_concierto(datos)
+                traducidos.append(traducir_evento(evento, self.ciudades))
             except Descartado as descarte:
                 self.resumen.descartados[descarte.motivo] += 1
                 self.resumen.nombres_descartados.append((descarte.motivo, evento.get("name", "")))
-                continue
-            except Exception as error:  # cualquier otro problema se reporta, no detiene la importación
+            except Exception as error:  # un evento con datos raros no detiene la importación
                 self.resumen.errores.append(f"{evento.get('id', '?')} ({evento.get('name', '')}): {error}")
+
+        # 2. Juntar los que son el mismo concierto y guardar uno por grupo.
+        for grupo in agrupar(traducidos):
+            datos = fusionar(grupo)
+            ids = [d.id_ticketmaster for d in grupo]
+            try:
+                # Cada concierto en su propia transacción: si falla, se deshace
+                # solo ese y la importación sigue con los demás.
+                with transaction.atomic():
+                    resultado = self._guardar_concierto(datos, ids)
+            except Exception as error:
+                self.resumen.errores.append(f"{datos.id_ticketmaster} ({datos.titulo}): {error}")
                 continue
             setattr(self.resumen, resultado, getattr(self.resumen, resultado) + 1)
+            self.resumen.agrupados += len(grupo) - 1
         return self.resumen
 
     def _artista(self, datos):
@@ -79,8 +91,12 @@ class Importador:
         recinto.save()
         return recinto
 
-    def _guardar_concierto(self, datos):
-        """Devuelve el nombre del contador a sumar: creados, actualizados o sin_cambios."""
+    def _guardar_concierto(self, datos, ids):
+        """Devuelve el nombre del contador a sumar: creados, actualizados o sin_cambios.
+
+        ids son todos los eventos del grupo: el concierto se busca por cualquiera
+        de ellos, así no se duplica si otra noche manda un evento distinto del grupo.
+        """
         artista = self._artista(datos.artista)
         invitados = [self._artista(a) for a in datos.invitados]
         valores = {
@@ -98,10 +114,14 @@ class Importador:
             # Solo si Ticketmaster trae precio; si no, se respeta el capturado a mano.
             valores.update(precio_desde=datos.precio_desde, moneda=datos.moneda)
 
-        concierto = Concierto.objects.filter(id_ticketmaster=datos.id_ticketmaster).first()
+        # __overlap: "la lista guardada comparte al menos un id con esta lista".
+        concierto = (
+            Concierto.objects.filter(Q(id_ticketmaster__in=ids) | Q(ids_agrupados__overlap=ids)).order_by("pk").first()
+        )
         if concierto is None:
             concierto = Concierto.objects.create(
                 id_ticketmaster=datos.id_ticketmaster,
+                ids_agrupados=sorted(ids),
                 origen=Concierto.Origen.TICKETMASTER,
                 importado_en=self.ahora,
                 **valores,
@@ -113,6 +133,8 @@ class Importador:
         invitados_cambiaron = set(concierto.invitados.values_list("pk", flat=True)) != {a.pk for a in invitados}
         for campo in cambios:
             setattr(concierto, campo, valores[campo])
+        # Se acumulan los ids: un evento que llegó alguna vez sigue apuntando a este concierto.
+        concierto.ids_agrupados = sorted(set(concierto.ids_agrupados) | set(ids) | {concierto.id_ticketmaster})
         concierto.importado_en = self.ahora  # se guarda siempre: "visto en la última importación"
         concierto.save()
         if invitados_cambiaron:

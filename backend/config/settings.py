@@ -30,12 +30,17 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",  # búsqueda sin acentos (unaccent) y campos de lista
+    "rest_framework",
+    "corsheaders",
     "conciertos",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # CORS debe ir antes de CommonMiddleware para agregar sus cabeceras a todas las respuestas.
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -83,3 +88,15 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 TICKETMASTER_API_KEY = os.environ.get("TICKETMASTER_API_KEY", "")
+
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "conciertos.paginacion.Paginacion",
+    "PAGE_SIZE": 20,
+    "COERCE_DECIMAL_TO_STRING": False,  # precios como números en el JSON, no como texto
+}
+
+# Orígenes (dominios) del frontend que pueden llamar a la API desde el navegador.
+# En desarrollo no hace falta: Vite reenvía /api al backend (mismo origen).
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get("CORS_ORIGENES_PERMITIDOS", "").split(",") if o.strip()
+]

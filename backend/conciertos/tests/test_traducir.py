@@ -73,6 +73,29 @@ class TraducirEventoTests(SimpleTestCase):
                     traducir_evento(self.eventos[indice], CIUDADES)
                 self.assertEqual(contexto.exception.motivo, motivo)
 
+    def test_complementos_reales_vistos_en_ticketmaster(self):
+        nombres = [
+            "Aquihayaquihay VIP+MEET&GREET",
+            "JIMMY SEA PRE-SIGNED POLAROID (Boleto de evento no incluido)",
+            "JIMMY SEA - HI TOUCH JIMMY SEA (Boleto de evento no incluido)",
+            "Andres Obregon M&G y Palomazo acustico",
+            "NSQK MERCH UPGRADE (No da acceso al evento)",
+            "Experiencia M&G con San Venus (sin boleto de evento)",
+        ]
+        for nombre in nombres:
+            with self.subTest(nombre=nombre):
+                evento = self.eventos[0]
+                evento["name"] = nombre
+                with self.assertRaises(Descartado):
+                    traducir_evento(evento, CIUDADES)
+
+    def test_abonos_e_individuales_no_son_complementos(self):
+        for nombre in ["Abono General Time Warp", "Individual General Corona Capital 2026"]:
+            with self.subTest(nombre=nombre):
+                evento = self.eventos[0]
+                evento["name"] = nombre
+                self.assertEqual(traducir_evento(evento, CIUDADES).titulo, nombre)
+
     def test_descarta_recinto_sin_coordenadas(self):
         evento = self.eventos[0]
         del evento["_embedded"]["venues"][0]["location"]

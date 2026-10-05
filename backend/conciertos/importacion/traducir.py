@@ -5,7 +5,7 @@ ciudades, y devuelve un DatosConcierto o lanza Descartado con el motivo.
 """
 import math
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -18,9 +18,13 @@ ANCHO_IDEAL_IMAGEN = 1024  # suficiente para el cartel grande sin cargar imágen
 # Eventos que no son el concierto en sí, sino un producto aparte (fase 0).
 PATRON_COMPLEMENTO = re.compile(
     r"estacionamiento|parking|paquete|\bvip\b|hospitality|experiencia|upgrade|souvenir|merch"
-    r"|\babono\b|meet\s*(&|and|y)\s*greet",
+    r"|meet\s*(&|and|y)\s*greet|\bm&g\b|polaroid|pre-?signed|hi[\s-]?touch|hi[\s-]?bye"
+    r"|boleto de evento no incluido|no da acceso|sin boleto",
     re.IGNORECASE,
 )
+# Los abonos y boletos "Individual" sí son el boleto de un festival, pero vienen
+# repetidos por tipo (General, Comfort Pass, Banamex Plus): se agrupan en un solo concierto.
+PATRON_ABONO = re.compile(r"^\s*(abono|individual)\b", re.IGNORECASE)
 
 ESTADOS = {
     "onsale": Concierto.Estado.EN_VENTA,
@@ -208,4 +212,37 @@ def traducir_evento(evento, ciudades):
         ),
         artista=artistas[0],
         invitados=artistas[1:],
+    )
+
+
+def clave_de_grupo(datos):
+    """Mismo artista, mismo recinto y mismo día local = el mismo concierto."""
+    dia_local = datos.fecha_hora.astimezone(ZoneInfo(ZONA_PREDETERMINADA)).date()
+    return (datos.artista.id_ticketmaster, datos.recinto.id_ticketmaster, dia_local)
+
+
+def agrupar(lista_datos):
+    """Agrupa los eventos que son el mismo concierto, conservando el orden de llegada."""
+    grupos = {}
+    for datos in lista_datos:
+        grupos.setdefault(clave_de_grupo(datos), []).append(datos)
+    return list(grupos.values())
+
+
+def fusionar(grupo):
+    """Un solo concierto a partir de un grupo.
+
+    Manda el evento que no es abono (y, entre iguales, el de id menor para que
+    la elección sea estable de una noche a otra). Se queda con el precio más bajo.
+    """
+    principal = min(grupo, key=lambda d: (bool(PATRON_ABONO.match(d.titulo)), d.id_ticketmaster))
+    precios = [d for d in grupo if d.precio_desde is not None]
+    mas_barato = min(precios, key=lambda d: d.precio_desde) if precios else None
+    return replace(
+        principal,
+        # "Abono General 3 días Corona Capital" no sirve de título: se usa el del artista.
+        titulo=principal.artista.nombre if PATRON_ABONO.match(principal.titulo) else principal.titulo,
+        imagen_url=principal.imagen_url or next((d.imagen_url for d in grupo if d.imagen_url), ""),
+        precio_desde=mas_barato.precio_desde if mas_barato else None,
+        moneda=mas_barato.moneda if mas_barato else principal.moneda,
     )

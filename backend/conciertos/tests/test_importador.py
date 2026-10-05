@@ -136,6 +136,70 @@ class ImportacionTests(TestCase):
         self.assertFalse(Concierto.objects.filter(id_ticketmaster="TM-COMETAS-CDMX").exists())
 
 
+def abono(base, id_evento, nombre, precio=None):
+    """Copia de un evento con otro id y nombre, como llegan los abonos de un festival."""
+    evento = {**base, "id": id_evento, "name": nombre}
+    if precio is not None:
+        evento["priceRanges"] = [{"type": "standard", "currency": "MXN", "min": precio, "max": precio}]
+    return evento
+
+
+class AbonosTests(TestCase):
+    def setUp(self):
+        self.base = cargar_eventos()[0]  # Los Cometas del Sur, Auditorio Nacional, 20 de noviembre
+
+    def test_abonos_del_mismo_dia_se_agrupan_con_el_concierto(self):
+        eventos = [
+            abono(self.base, "TM-ABONO-PLUS", "Abono Banamex Plus Los Cometas del Sur", precio=1500),
+            self.base,
+            abono(self.base, "TM-ABONO-GRAL", "Abono General Los Cometas del Sur", precio=900),
+        ]
+        resumen = importar(eventos)
+        self.assertEqual(resumen.creados, 1)
+        self.assertEqual(resumen.agrupados, 2)
+        concierto = Concierto.objects.get()
+        self.assertEqual(concierto.id_ticketmaster, "TM-COMETAS-CDMX")  # manda el que no es abono
+        self.assertEqual(concierto.titulo, "Los Cometas del Sur - Gira Polvo de Estrellas")
+        self.assertEqual(concierto.precio_desde, Decimal("900"))  # el más barato del grupo
+
+    def test_festival_solo_con_abonos_usa_el_nombre_del_artista(self):
+        eventos = [
+            abono(self.base, "TM-ABONO-B", "Abono Comfort Pass Festival Cometas 2026"),
+            abono(self.base, "TM-ABONO-A", "Abono General 3 días Festival Cometas 2026"),
+        ]
+        importar(eventos)
+        concierto = Concierto.objects.get()
+        self.assertEqual(concierto.id_ticketmaster, "TM-ABONO-A")  # entre abonos, el id menor
+        self.assertEqual(concierto.titulo, "Los Cometas del Sur")
+
+    def test_boletos_individuales_de_festival_se_agrupan(self):
+        eventos = [
+            abono(self.base, "TM-IND-B", "Individual Banamex Plus Corona Capital 2026", precio=2500),
+            abono(self.base, "TM-IND-A", "Individual General Corona Capital 2026", precio=1800),
+        ]
+        resumen = importar(eventos)
+        self.assertEqual((resumen.creados, resumen.agrupados), (1, 1))
+        concierto = Concierto.objects.get()
+        self.assertEqual(concierto.titulo, "Los Cometas del Sur")
+        self.assertEqual(concierto.precio_desde, Decimal("1800"))
+
+    def test_si_otra_noche_falta_el_principal_no_se_duplica(self):
+        importar([self.base, abono(self.base, "TM-ABONO-GRAL", "Abono General Los Cometas del Sur")])
+        resumen = importar([abono(self.base, "TM-ABONO-GRAL", "Abono General Los Cometas del Sur")])
+        self.assertEqual(resumen.creados, 0)
+        self.assertEqual(Concierto.objects.count(), 1)
+        self.assertEqual(Concierto.objects.get().id_ticketmaster, "TM-COMETAS-CDMX")
+
+    def test_abono_vip_sigue_siendo_complemento(self):
+        resumen = importar([abono(self.base, "TM-ABONO-VIP", "Abono Banamex Stage Vip Time Warp")])
+        self.assertEqual(dict(resumen.descartados), {"complemento": 1})
+
+    def test_otro_dia_es_otro_concierto(self):
+        otro_dia = abono(self.base, "TM-COMETAS-DIA2", "Los Cometas del Sur")
+        otro_dia["dates"] = {**self.base["dates"], "start": {**self.base["dates"]["start"], "dateTime": "2026-11-22T03:00:00Z"}}
+        self.assertEqual(importar([self.base, otro_dia]).creados, 2)
+
+
 class ComandoImportarTests(TestCase):
     @patch("conciertos.management.commands.importar_ticketmaster.ClienteTicketmaster")
     def test_comando_imprime_el_resumen(self, Cliente):
@@ -150,5 +214,5 @@ class ComandoImportarTests(TestCase):
         texto = salida.getvalue()
         self.assertIn("Eventos recibidos: 6 (12 llamadas a la API)", texto)
         self.assertIn("Creados: 3", texto)
-        self.assertIn("Complementos (VIP, estacionamiento, abonos): 1", texto)
+        self.assertIn("Complementos (VIP, estacionamiento, meet & greet): 1", texto)
         cliente.eventos_por_meses.assert_called_once_with(12, countryCode="MX", classificationName="music")

@@ -9,3 +9,7 @@ __pycache__/
 
 # Datos descargados en la fase 0
 fase0/muestras/
+
+# Frontend
+node_modules/
+frontend/dist/

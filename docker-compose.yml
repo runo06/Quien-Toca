@@ -38,5 +38,25 @@ services:
       db:
         condition: service_healthy
 
+  frontend:
+    # Sin Dockerfile propio: la imagen oficial de Node basta para el servidor de desarrollo.
+    image: node:24-alpine
+    working_dir: /app
+    # npm install al arrancar: rápido cuando ya está todo, y no se olvida tras cambiar package.json.
+    command: sh -c "npm install && npm run dev"
+    environment:
+      # Vite reenvía /api a este destino. "backend" es el nombre del servicio de arriba.
+      API_PROXY_DESTINO: http://backend:8000
+    volumes:
+      - ./frontend:/app
+      # node_modules vive en un volumen de Docker, no en tu carpeta de Windows:
+      # algunos paquetes traen partes compiladas para Linux y no deben mezclarse.
+      - node_modules_frontend:/app/node_modules
+    ports:
+      - "${PUERTO_FRONTEND:-5173}:5173"
+    depends_on:
+      - backend
+
 volumes:
   datos_postgres:
+  node_modules_frontend:

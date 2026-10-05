@@ -1,0 +1,58 @@
+.concierto .centro, .centro.concierto { padding-block: 8px clamp(40px, 6vw, 64px); }
+.volver { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding-block: 12px; font-weight: 600; text-decoration: none; }
+.volver:hover { text-decoration: underline; text-underline-offset: 4px; }
+.volver svg { width: 18px; height: 18px; }
+.aviso-estado { margin-top: 8px; padding: 14px 18px; border: 1.5px solid var(--alerta); border-radius: 10px; color: var(--alerta); font-weight: 600; }
+
+/* Cabeza: cartel grande + datos */
+.cabeza { margin-top: 12px; display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: clamp(24px, 4vw, 52px); align-items: center; }
+.cartelote { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 6px; overflow: hidden; }
+.cartelote canvas, .cartelote img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.cuando { font-size: 1.15rem; font-weight: 600; color: var(--lima); }
+.cabeza h1 { margin-top: 10px; font-size: clamp(3rem, 7.4vw, 6.6rem); line-height: 1.02; overflow-wrap: anywhere; }
+.cabeza h1:focus { outline: none; }
+.gira-nombre { margin-top: 12px; font-size: 1.35rem; overflow-wrap: anywhere; }
+.invitados { margin-top: 8px; font-size: 1.05rem; }
+.datos { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 18px 44px; }
+.datos dt { font-size: 0.88rem; color: var(--papel-2); }
+.datos dd { font-size: 1.1rem; font-weight: 600; overflow-wrap: anywhere; }
+
+/* Taquilla: otro boleto, con línea de corte entre la venta y las zonas */
+.taquilla { margin-top: clamp(32px, 5vw, 52px); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); background: var(--boleto); border-radius: 6px; overflow: hidden; }
+.taquilla--sola { grid-template-columns: minmax(0, 1fr); }
+.taquilla__venta { padding: 28px clamp(20px, 3vw, 32px); display: flex; flex-direction: column; gap: 20px; }
+.taquilla__venta h2 { font-size: 1.9rem; }
+.opcion { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.opcion strong { display: block; font-size: 1.08rem; }
+.opcion span { font-size: 0.9rem; color: var(--papel-2); }
+.taquilla__zonas { position: relative; padding: 28px clamp(20px, 3vw, 32px); border-left: 2px dashed var(--noche); }
+.taquilla__zonas::before, .taquilla__zonas::after { content: ""; position: absolute; left: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--noche); }
+.taquilla__zonas::before { top: -11px; }
+.taquilla__zonas::after { bottom: -11px; }
+.zonas { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.zonas caption { text-align: left; font-weight: 600; padding-bottom: 8px; }
+.zonas th { text-align: left; font-weight: 400; color: var(--papel-2); padding-block: 7px; }
+.zonas td { text-align: right; font-weight: 600; }
+.zonas tr + tr th, .zonas tr + tr td { border-top: 1px solid var(--corte); }
+.letra-chica { margin-top: 14px; font-size: 0.82rem; color: var(--papel-2); }
+
+/* Otras fechas */
+.fechas { margin-top: clamp(40px, 6vw, 64px); }
+.fechas h2 { font-size: clamp(1.5rem, 2.8vw, 2rem); margin-bottom: 18px; }
+.fechas__lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; }
+.parada { display: flex; align-items: center; gap: 16px; min-height: 68px; padding: 12px 18px; background: var(--boleto); border: 2px solid var(--boleto); border-radius: 6px; text-decoration: none; }
+a.parada:hover { border-color: var(--papel-3); }
+.parada[aria-current="true"] { border-color: var(--lima); }
+.parada__dia { font-family: var(--f-cartel); font-size: 1.4rem; text-transform: uppercase; white-space: nowrap; }
+.parada strong { display: block; }
+.parada span span { font-size: 0.88rem; color: var(--papel-2); }
+.parada--pasada .parada__dia { color: var(--papel-3); }
+
+@media (max-width: 860px) {
+  .cabeza { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .cartelote { aspect-ratio: 16 / 9; }
+  .taquilla { grid-template-columns: minmax(0, 1fr); }
+  .taquilla__zonas { border-left: 0; border-top: 2px dashed var(--noche); }
+  .taquilla__zonas::before { left: -11px; top: -12px; }
+  .taquilla__zonas::after { left: auto; right: -11px; top: -12px; bottom: auto; }
+}

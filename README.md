@@ -13,14 +13,26 @@ Requisitos: Docker Desktop abierto.
 # 1. Variables de entorno: copia la plantilla y llena los valores vacíos
 copy .env.example .env
 
-# 2. Levantar base de datos y backend (aplica las migraciones al arrancar)
+# 2. Levantar base de datos, backend y frontend (aplica las migraciones al arrancar)
 docker compose up
 
 # 3. En otra terminal: crear tu usuario del panel de administración
 docker compose exec backend python manage.py createsuperuser
 ```
 
-Panel: http://localhost:8000/admin (o el puerto de `PUERTO_BACKEND`).
+| Qué | Dirección |
+|---|---|
+| Página | http://localhost:5173 (o el puerto de `PUERTO_FRONTEND`) |
+| API | http://localhost:8000/api/conciertos/ (o el de `PUERTO_BACKEND`) |
+| Panel | http://localhost:8000/admin |
+
+### API
+
+| Endpoint | Parámetros |
+|---|---|
+| `GET /api/ciudades/` | — |
+| `GET /api/conciertos/` | `ciudad`, `q`, `desde`, `hasta` (AAAA-MM-DD), `orden` (`fecha` o `precio`), `pagina` |
+| `GET /api/conciertos/<slug>/` | — |
 
 ### Importar conciertos de Ticketmaster
 
@@ -56,8 +68,18 @@ backend/
 └── conciertos/
     ├── models.py        Ciudad, Recinto, Artista, Concierto, PrecioZona
     ├── admin.py         panel de administración
+    ├── views.py         API REST (serializers.py, urls.py, paginacion.py)
     ├── importacion/     cliente de Ticketmaster, traducción e importador
     └── tests/           pruebas con respuestas de ejemplo (sin llamar a la API)
+frontend/src/
+├── App.jsx              rutas
+├── api.js               llamadas al backend
+├── contexto/            ciudades compartidas
+├── hooks/               usarPeticion, usarCartelera
+├── paginas/             Inicio, Concierto, No encontrada
+├── componentes/         Boleto, SelectorCiudad, Taquilla, Cartel...
+├── utilidades/          fechas, rangos, textos
+└── estilos/base.css     tokens y estilos del prototipo
 fase0/                   exploración inicial de los datos (ver docs/fase0-hallazgos.md)
 docs/diseno/             prototipo visual
 ```

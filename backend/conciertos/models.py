@@ -1,7 +1,13 @@
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.text import slugify
+
+
+def inicio_de_hoy():
+    """Medianoche de hoy en la hora de México. Un concierto de hoy sigue en cartelera todo el día."""
+    return timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def slug_unico(instancia, texto, largo_maximo=100):
@@ -83,6 +89,12 @@ class Artista(models.Model):
         super().save(*args, **kwargs)
 
 
+class ConciertoQuerySet(models.QuerySet):
+    def proximos(self):
+        """Los que se muestran en la cartelera: de hoy en adelante y no cancelados."""
+        return self.filter(fecha_hora__gte=inicio_de_hoy()).exclude(estado=Concierto.Estado.CANCELADO)
+
+
 class Concierto(models.Model):
     class Origen(models.TextChoices):
         TICKETMASTER = "ticketmaster", "Ticketmaster"
@@ -126,9 +138,16 @@ class Concierto(models.Model):
     moneda = models.CharField(max_length=3, default="MXN")
     origen = models.CharField(max_length=20, choices=Origen.choices, default=Origen.MANUAL)
     id_ticketmaster = models.CharField("id de Ticketmaster", max_length=64, unique=True, null=True, blank=True)
+    ids_agrupados = ArrayField(
+        models.CharField(max_length=64), default=list, blank=True, verbose_name="ids agrupados",
+        help_text="Todos los eventos de Ticketmaster que forman este concierto (abonos, repetidos).",
+    )
     importado_en = models.DateTimeField("última importación", null=True, blank=True)
     creado_en = models.DateTimeField("creado", auto_now_add=True)
     actualizado_en = models.DateTimeField("actualizado", auto_now=True)
+
+    # Concierto.objects.proximos() además de los métodos normales (filter, get...).
+    objects = ConciertoQuerySet.as_manager()
 
     class Meta:
         ordering = ["fecha_hora"]
