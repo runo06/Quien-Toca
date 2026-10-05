@@ -41,8 +41,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # WhiteNoise sirve los archivos estáticos (CSS del panel) sin un servidor aparte.
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     # CORS debe ir antes de CommonMiddleware para agregar sus cabeceras a todas las respuestas.
     "corsheaders.middleware.CorsMiddleware",
@@ -52,6 +50,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if not DEBUG:
+    # En producción WhiteNoise sirve los estáticos (CSS del panel) sin un servidor aparte.
+    # Va justo después de SecurityMiddleware. En desarrollo los sirve runserver.
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "config.urls"
 

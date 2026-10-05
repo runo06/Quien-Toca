@@ -25,6 +25,9 @@ jobs:
     env:
       DATABASE_URL: postgres://quien_toca:clave_de_prueba@localhost:5432/quien_toca
       DJANGO_SECRET_KEY: clave-solo-para-pruebas-no-se-usa-en-produccion-0123456789
+      # Como en desarrollo: en modo producción todo se redirige a HTTPS y el
+      # cliente de pruebas (HTTP) recibiría 301. Producción se revisa abajo con check --deploy.
+      DJANGO_DEBUG: "True"
     defaults:
       run:
         working-directory: backend
