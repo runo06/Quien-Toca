@@ -1,0 +1,11 @@
+# Claves y contraseñas
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Datos descargados en la fase 0
+fase0/muestras/

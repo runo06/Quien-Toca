@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>¿Quién toca?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700&display=swap">
+<style>
+/* Cartelera: un muro de boletos, cada uno con su talón de fecha y su cartel; el titular es el filtro de ciudad. */
+:root {
+  --noche: #17131C;
+  --noche-2: #1E1925;
+  --boleto: #241E2D;
+  --boleto-2: #2E2739;
+  --corte: #40384C;
+  --papel: #F4EFE6;
+  --papel-2: #B9AFC4;
+  --papel-3: #8F859B;
+  --lima: #C8F03C;
+  --sobre-lima: #17131C;
+  --rosa: #FF7AA8;
+  --alerta: #FFA08F;
+  --f-cartel: 'Anton', 'Arial Narrow', Impact, sans-serif;
+  --f-texto: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --canal: clamp(16px, 4vw, 40px);
+  --ancho: 1180px;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--noche); }
+body {
+  background: var(--noche);
+  color: var(--papel);
+  font: 400 16px/1.5 var(--f-texto);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, dl, dd, ol, ul { margin: 0; padding: 0; }
+ol, ul { list-style: none; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--papel); outline-offset: 3px; }
+.solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.centro { max-width: var(--ancho); margin-inline: auto; padding-inline: var(--canal); }
+
+/* Tipos de cartel */
+.cartel { font-family: var(--f-cartel); font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.05; text-wrap: balance; }
+.t-seccion { font-size: clamp(1.75rem, 3.6vw, 2.6rem); }
+.apagado { color: var(--papel-2); }
+
+/* Barra superior */
+.barra .centro { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 28px; padding-block: 18px; }
+.marca { font-family: var(--f-cartel); font-size: 1.6rem; letter-spacing: 0.02em; text-transform: uppercase; text-decoration: none; }
+.barra nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; font-weight: 500; }
+.barra nav a { padding-block: 10px; text-decoration: none; }
+.barra nav a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.muestra { font-size: 0.82rem; color: var(--papel-2); border: 1px solid var(--corte); border-radius: 999px; padding: 4px 12px; }
+
+/* Portada */
+.portada .centro { padding-block: clamp(28px, 5vw, 56px) clamp(36px, 5vw, 60px); }
+.portada__titular { position: relative; }
+.titular { font-family: var(--f-cartel); font-weight: 400; font-size: clamp(3.3rem, 10.5vw, 9.25rem); line-height: 1.02; text-transform: uppercase; letter-spacing: 0.01em; }
+.titular:focus { outline: none; }
+.titular__linea { display: block; }
+.ciudad { display: inline-flex; align-items: center; gap: 0.12em; padding: 0; margin: 0; background: none; border: 0; border-bottom: 0.07em solid var(--lima); font: inherit; letter-spacing: inherit; text-transform: inherit; line-height: 1; padding-bottom: 0.02em; }
+.ciudad svg { width: 0.4em; height: 0.4em; transition: transform 0.15s; }
+.ciudad[aria-expanded="true"] svg { transform: rotate(180deg); }
+.ciudades { position: absolute; z-index: 5; top: calc(100% + 10px); left: 0; width: min(100%, 360px); display: flex; flex-direction: column; padding: 8px; background: var(--boleto-2); border: 1px solid var(--corte); border-radius: 12px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
+.ciudades__op { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 48px; padding: 10px 14px; background: none; border: 0; border-radius: 8px; text-align: left; font-weight: 600; font-size: 1.05rem; }
+.ciudades__op span { font-weight: 400; font-size: 0.85rem; color: var(--papel-2); }
+.ciudades__op:hover { background: var(--corte); }
+.ciudades__op[aria-pressed="true"] { background: var(--lima); color: var(--sobre-lima); }
+.ciudades__op[aria-pressed="true"] span { color: var(--sobre-lima); }
+.bajada { margin-top: 22px; max-width: 34em; font-size: 1.19rem; color: var(--papel-2); }
+
+.filtros { margin-top: 30px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 28px; }
+.campo { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.campo--buscar { flex: 1 1 300px; max-width: 520px; }
+.campo label, .etiqueta { font-size: 0.9rem; font-weight: 600; }
+.entrada { width: 100%; min-height: 50px; padding: 12px 16px; background: var(--boleto); border: 1.5px solid var(--corte); border-radius: 10px; }
+.entrada::placeholder { color: var(--papel-3); }
+.entrada:hover { border-color: var(--papel-3); }
+textarea.entrada { min-height: 120px; resize: vertical; }
+.fichas { display: flex; flex-wrap: wrap; gap: 8px; }
+.ficha { min-height: 46px; padding: 0 18px; background: none; border: 1.5px solid var(--corte); border-radius: 999px; font-weight: 500; }
+.ficha:hover { border-color: var(--papel-3); }
+.ficha[aria-pressed="true"] { background: var(--papel); border-color: var(--papel); color: var(--noche); font-weight: 600; }
+
+/* Botones */
+.boton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 24px; background: var(--lima); color: var(--sobre-lima); border: 0; border-radius: 999px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: transform 0.12s; }
+.boton:hover { transform: translateY(-2px); }
+.boton svg { width: 18px; height: 18px; flex: none; }
+.boton--linea { background: none; color: var(--papel); border: 1.5px solid var(--papel); font-weight: 600; }
+.enlace { display: inline-block; padding-block: 10px; background: none; border: 0; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+
+/* Cartelera */
+.cartelera .centro { padding-bottom: clamp(48px, 7vw, 80px); }
+.encabezado { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-bottom: 22px; }
+.orden { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+.orden select { min-height: 46px; padding: 0 12px; background: var(--boleto); border: 1.5px solid var(--corte); border-radius: 10px; }
+.boletos { display: flex; flex-direction: column; gap: 14px; }
+.boleto { position: relative; display: grid; grid-template-columns: 108px 132px minmax(0, 1fr) auto; grid-template-areas: "fecha cartel info accion"; background: var(--boleto); border-radius: 6px; overflow: hidden; }
+.boleto__fecha { grid-area: fecha; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 18px 6px; border-right: 2px dashed var(--noche); text-align: center; }
+.boleto__fecha::before, .boleto__fecha::after { content: ""; position: absolute; right: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--noche); z-index: 1; }
+.boleto__fecha::before { top: -11px; }
+.boleto__fecha::after { bottom: -11px; }
+.dsem { font-size: 0.82rem; font-weight: 600; color: var(--papel-2); }
+.dia { font-family: var(--f-cartel); font-size: 3.2rem; line-height: 1; }
+.mes { font-size: 0.9rem; font-weight: 600; text-transform: capitalize; }
+.boleto__cartel { grid-area: cartel; position: relative; min-height: 132px; }
+.boleto__cartel canvas, .cartelote canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.boleto__info { grid-area: info; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 18px 24px; }
+.boleto__info h3 { font-size: clamp(1.55rem, 3vw, 2.25rem); }
+.boleto__info h3 a { text-decoration: none; }
+.boleto__info h3 a:hover { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; }
+.nota { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 6px; font-size: 0.9rem; }
+.nota svg { width: 16px; height: 16px; color: var(--lima); flex: none; }
+.boleto__accion { grid-area: accion; display: flex; align-items: center; gap: 22px; padding: 18px 24px 18px 0; }
+.precio span { display: block; font-size: 0.82rem; color: var(--papel-2); }
+.precio strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.vacio { padding: 36px 28px; background: var(--boleto); border-radius: 6px; display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.vacio p { max-width: 34em; }
+
+/* Reseñas */
+.voces { background: var(--noche-2); }
+.voces .centro { padding-block: clamp(48px, 7vw, 72px); }
+.voces__lista { margin-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 18px; }
+.resena { display: flex; flex-direction: column; gap: 14px; padding: 24px; background: var(--boleto-2); border-radius: 14px; }
+.resena__arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; }
+.resena__texto { font-size: 1.05rem; line-height: 1.55; }
+.resena__pie { margin-top: auto; font-size: 0.9rem; }
+.resena__pie strong { display: block; }
+.estrellas { display: inline-flex; gap: 3px; }
+.estrellas svg { width: 20px; height: 20px; color: var(--corte); }
+.estrellas svg.on { color: var(--lima); }
+.sello { display: inline-block; font-family: var(--f-cartel); font-size: 0.86rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rosa); border: 2px solid var(--rosa); border-radius: 4px; padding: 1px 10px; transform: rotate(-5deg); }
+.util { align-self: flex-start; min-height: 44px; padding: 0 16px; background: none; border: 1.5px solid var(--corte); border-radius: 999px; font-size: 0.9rem; font-weight: 500; }
+.util:hover { border-color: var(--papel-3); }
+.util[aria-pressed="true"] { border-color: var(--lima); color: var(--lima); }
+.tuya { font-size: 0.8rem; font-weight: 600; color: var(--sobre-lima); background: var(--lima); border-radius: 4px; padding: 2px 8px; }
+
+.cierre .centro { padding-block: clamp(44px, 6vw, 68px); }
+.cierre h2 { font-size: clamp(2.1rem, 5.4vw, 4rem); }
+.cierre p { margin-top: 12px; max-width: 32em; font-size: 1.15rem; color: var(--papel-2); }
+.pie { border-top: 1px solid var(--corte); }
+.pie .centro { padding-block: 22px 28px; font-size: 0.88rem; color: var(--papel-2); }
+
+/* Vista de concierto */
+.concierto .centro { padding-block: 8px clamp(40px, 6vw, 64px); }
+.volver { display: inline-flex; align-items: center; gap: 6px; padding-block: 12px; font-weight: 600; text-decoration: none; }
+.volver:hover { text-decoration: underline; text-underline-offset: 4px; }
+.volver svg { width: 18px; height: 18px; }
+.cabeza { margin-top: 12px; display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: clamp(24px, 4vw, 52px); align-items: center; }
+.cartelote { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 6px; overflow: hidden; }
+.cuando { font-size: 1.15rem; font-weight: 600; color: var(--lima); }
+.cabeza h1 { margin-top: 10px; font-size: clamp(3rem, 7.4vw, 6.6rem); line-height: 1.02; }
+.cabeza h1:focus { outline: none; }
+.gira-nombre { margin-top: 12px; font-size: 1.35rem; }
+.datos { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 18px 44px; }
+.datos dt { font-size: 0.88rem; color: var(--papel-2); }
+.datos dd { font-size: 1.1rem; font-weight: 600; }
+
+.taquilla { margin-top: clamp(32px, 5vw, 52px); display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); background: var(--boleto); border-radius: 6px; overflow: hidden; }
+.taquilla__venta { padding: 28px clamp(20px, 3vw, 32px); display: flex; flex-direction: column; gap: 20px; }
+.taquilla__venta h2 { font-size: 1.9rem; }
+.opcion { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.opcion + .opcion { padding-top: 20px; border-top: 1px solid var(--corte); }
+.opcion strong { display: block; font-size: 1.08rem; }
+.opcion span { font-size: 0.9rem; color: var(--papel-2); }
+.taquilla__zonas { position: relative; padding: 28px clamp(20px, 3vw, 32px); border-left: 2px dashed var(--noche); }
+.taquilla__zonas::before, .taquilla__zonas::after { content: ""; position: absolute; left: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--noche); }
+.taquilla__zonas::before { top: -11px; }
+.taquilla__zonas::after { bottom: -11px; }
+.zonas { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.zonas caption { text-align: left; font-weight: 600; padding-bottom: 8px; }
+.zonas th { text-align: left; font-weight: 400; color: var(--papel-2); padding-block: 7px; }
+.zonas td { text-align: right; font-weight: 600; }
+.zonas tr + tr th, .zonas tr + tr td { border-top: 1px solid var(--corte); }
+.letra-chica { margin-top: 14px; font-size: 0.82rem; color: var(--papel-2); }
+
+.fechas { margin-top: clamp(40px, 6vw, 64px); }
+.fechas h2 { font-size: clamp(1.5rem, 2.8vw, 2rem); margin-bottom: 18px; }
+.fechas__lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; }
+.parada { display: flex; align-items: center; gap: 16px; min-height: 68px; padding: 12px 18px; background: var(--boleto); border: 2px solid var(--boleto); border-radius: 6px; text-decoration: none; }
+a.parada:hover { border-color: var(--papel-3); }
+.parada[aria-current="true"] { border-color: var(--lima); }
+.parada__dia { font-family: var(--f-cartel); font-size: 1.4rem; text-transform: uppercase; white-space: nowrap; }
+.parada strong { display: block; }
+.parada span span { font-size: 0.88rem; color: var(--papel-2); }
+.parada--pasada .parada__dia { color: var(--papel-3); }
+
+.opiniones { background: var(--noche-2); }
+.opiniones .centro { padding-block: clamp(48px, 7vw, 72px); }
+.opiniones__cuerpo { margin-top: 32px; display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 32px clamp(28px, 5vw, 60px); align-items: start; }
+.promedio { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.promedio b { font-family: var(--f-cartel); font-weight: 400; font-size: 6rem; line-height: 1; }
+.subtitulo { margin: 26px 0 12px; font-size: 1rem; font-weight: 600; }
+.barras { display: flex; flex-direction: column; gap: 12px; }
+.barra-fila { display: grid; grid-template-columns: 116px minmax(0, 1fr) 30px; align-items: center; gap: 12px; font-size: 0.94rem; }
+.barra-fila i { display: block; height: 10px; border-radius: 3px; background: var(--corte); overflow: hidden; }
+.barra-fila i b { display: block; height: 100%; background: var(--lima); }
+.barra-fila strong { text-align: right; font-variant-numeric: tabular-nums; }
+.opiniones__lista { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.invita { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; padding: 22px 24px; border: 1.5px dashed var(--corte); border-radius: 14px; }
+.invita p { font-size: 1.08rem; font-weight: 600; }
+
+/* Formulario de reseña */
+.formulario { display: flex; flex-direction: column; gap: 22px; padding: clamp(20px, 3vw, 28px); background: var(--boleto-2); border-radius: 14px; }
+.formulario h3 { font-size: 1.6rem; }
+.grupo { display: flex; flex-direction: column; gap: 8px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.grupo legend { padding: 0; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+.calif { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.calif__botones { display: flex; }
+.estrella { width: 50px; height: 50px; padding: 0; background: none; border: 0; color: var(--corte); }
+.estrella svg { width: 40px; height: 40px; }
+.estrella.on { color: var(--lima); }
+.calif__palabra { font-family: var(--f-cartel); font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.03em; min-width: 6em; }
+.aspectos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 4px 32px; }
+.aspecto { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.aspecto__nombre { font-weight: 500; }
+.tramos { display: flex; }
+.tramo { width: 36px; height: 44px; padding: 0 2px; background: none; border: 0; display: flex; align-items: center; }
+.tramo i { display: block; width: 100%; height: 10px; border-radius: 3px; background: var(--corte); }
+.tramo.on i { background: var(--lima); }
+.doble { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 18px; }
+.casilla { display: flex; align-items: flex-start; gap: 12px; font-weight: 500; }
+.casilla input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--lima); flex: none; }
+.error { font-size: 0.88rem; font-weight: 600; color: var(--alerta); }
+.formulario__pie { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+
+/* Aviso flotante */
+.aviso { position: fixed; z-index: 20; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); padding: 14px 20px; background: var(--papel); color: var(--noche); border-radius: 10px; font-weight: 600; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+
+@media (min-width: 861px) {
+  .opiniones__cuerpo > div:first-child { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); }
+}
+@media (max-width: 860px) {
+  .cabeza { grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .cartelote { aspect-ratio: 16 / 9; }
+  .taquilla { grid-template-columns: minmax(0, 1fr); }
+  .taquilla__zonas { border-left: 0; border-top: 2px dashed var(--noche); }
+  .taquilla__zonas::before { left: -11px; top: -12px; }
+  .taquilla__zonas::after { left: auto; right: -11px; top: -12px; bottom: auto; }
+  .opiniones__cuerpo { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .boleto { grid-template-columns: 88px minmax(0, 1fr); grid-template-areas: "cartel cartel" "fecha info" "accion accion"; }
+  .boleto__cartel { min-height: 76px; }
+  .boleto__fecha { padding: 14px 4px; }
+  .dia { font-size: 2.6rem; }
+  .boleto__info { padding: 16px 16px 14px; }
+  .boleto__accion { justify-content: space-between; padding: 14px 16px; border-top: 1px solid var(--corte); }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+</head>
+<body>
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="i-estrella" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.6l2.84 5.98 6.56.86-4.8 4.56 1.2 6.5L12 17.4 6.2 20.5l1.2-6.5-4.8-4.56 6.56-.86z"/></symbol>
+  <symbol id="i-abajo" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M5 9l7 7 7-7"/></symbol>
+  <symbol id="i-atras" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-fuera" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+</svg>
+
+<header class="barra">
+  <div class="centro">
+    <a class="marca" href="#inicio" data-ir="inicio">¿Quién toca?</a>
+    <nav aria-label="Principal">
+      <a href="#inicio" data-ir="inicio">Cartelera</a>
+      <a href="#inicio" data-ir="inicio" data-ancla="resenas">Reseñas</a>
+      <span class="muestra">Prototipo con datos de ejemplo</span>
+    </nav>
+  </div>
+</header>
+
+<main id="vista"></main>
+
+<footer class="pie">
+  <div class="centro">Los artistas, recintos, precios y reseñas de esta página son inventados para mostrar el diseño.</div>
+</footer>
+
+<div class="aviso" id="aviso" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Fechas ---------- */
+  var DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  var DIAS_C = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  var MESES_C = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+  var hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  // Las fechas de ejemplo se calculan desde hoy para que la cartelera nunca quede vencida.
+  var sabado = masDias(hoy, (6 - hoy.getDay() + 7) % 7);
+
+  function masDias(base, n) { var d = new Date(base); d.setDate(d.getDate() + n); return d; }
+  function semana(n, viernes) { return masDias(sabado, n * 7 - (viernes ? 1 : 0)); }
+  function fechaLarga(d) { return DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' de ' + d.getFullYear(); }
+  function fechaCorta(d) { return d.getDate() + ' ' + MESES_C[d.getMonth()]; }
+  function fechaMedia(d) { return d.getDate() + ' de ' + MESES[d.getMonth()]; }
+
+  /* ---------- Datos de ejemplo ---------- */
+  var GIRAS = {
+    cometas: { artista: 'Los Cometas del Sur', gira: 'Gira Polvo de Estrellas', genero: 'Rock', estilo: 'anillos', tintas: ['#2A1A4D', '#FF7AA8', '#FFB02E'], semilla: 11 },
+    marea: { artista: 'Marea Roja', gira: 'Tour Sal y Arena', genero: 'Cumbia', estilo: 'ondas', tintas: ['#0E2F3D', '#4DD8FF', '#C8F03C'], semilla: 23 },
+    valentina: { artista: 'Valentina Robles', gira: 'Cartas que no envié', genero: 'Pop', estilo: 'puntos', tintas: ['#4C1436', '#F4EFE6', '#FF7AA8'], semilla: 37 },
+    niebla: { artista: 'Niebla Eléctrica', gira: 'Voltaje', genero: 'Electrónica', estilo: 'barras', tintas: ['#101B40', '#C8F03C', '#4DD8FF'], semilla: 41 },
+    sierra: { artista: 'Banda Sierra Madre', gira: '25 años', genero: 'Regional', estilo: 'rayos', tintas: ['#3D1A10', '#FFB02E', '#FF7AA8'], semilla: 59 }
+  };
+  var CIUDADES = ['Puebla', 'Tlaxcala', 'Ciudad de México', 'Guadalajara', 'Monterrey'];
+
+  function c(id, gira, ciudad, recinto, fecha, hora, puertas, desde) {
+    return { id: id, gira: gira, ciudad: ciudad, recinto: recinto, fecha: fecha, hora: hora, puertas: puertas, desde: desde };
+  }
+  var conciertos = [
+    c('cometas-cdmx', 'cometas', 'Ciudad de México', 'Arena Central', semana(-2), '9:00 p. m.', '7:00 p. m.', 780),
+    c('cometas-gdl', 'cometas', 'Guadalajara', 'Auditorio Minerva', semana(-1), '9:00 p. m.', '7:30 p. m.', 690),
+    c('cometas-puebla', 'cometas', 'Puebla', 'Auditorio del Valle', semana(1), '9:00 p. m.', '7:30 p. m.', 650),
+    c('cometas-mty', 'cometas', 'Monterrey', 'Arena del Cerro', semana(2), '9:00 p. m.', '7:30 p. m.', 720),
+    c('marea-gdl', 'marea', 'Guadalajara', 'Auditorio Minerva', semana(-3), '8:30 p. m.', '7:00 p. m.', 420),
+    c('marea-puebla', 'marea', 'Puebla', 'Foro La Constancia', semana(0), '8:30 p. m.', '7:00 p. m.', 380),
+    c('marea-cdmx', 'marea', 'Ciudad de México', 'Foro Tezontle', semana(3), '8:30 p. m.', '7:00 p. m.', 450),
+    c('valentina-mty', 'valentina', 'Monterrey', 'Teatro Regio', semana(-4), '8:00 p. m.', '6:30 p. m.', 560),
+    c('valentina-puebla', 'valentina', 'Puebla', 'Teatro del Centro', semana(4), '8:00 p. m.', '6:30 p. m.', 520),
+    c('valentina-cdmx', 'valentina', 'Ciudad de México', 'Arena Central', semana(6), '8:30 p. m.', '7:00 p. m.', 640),
+    c('valentina-gdl', 'valentina', 'Guadalajara', 'Auditorio Minerva', semana(7), '8:00 p. m.', '6:30 p. m.', 540),
+    c('niebla-tlaxcala', 'niebla', 'Tlaxcala', 'Centro de Convenciones', semana(5), '10:00 p. m.', '8:30 p. m.', 450),
+    c('niebla-puebla', 'niebla', 'Puebla', 'Foro La Constancia', semana(9), '10:00 p. m.', '8:30 p. m.', 480),
+    c('sierra-puebla', 'sierra', 'Puebla', 'Auditorio del Valle', semana(-6), '7:00 p. m.', '5:30 p. m.', 700),
+    c('sierra-tlaxcala', 'sierra', 'Tlaxcala', 'Recinto Ferial', semana(6, true), '7:00 p. m.', '5:30 p. m.', 600),
+    c('sierra-mty', 'sierra', 'Monterrey', 'Arena del Cerro', semana(8), '7:00 p. m.', '5:30 p. m.', 750)
+  ];
+  var porId = {};
+  conciertos.forEach(function (x) { porId[x.id] = x; });
+
+  function r(concierto, nombre, general, show, sonido, puntualidad, recinto, util, texto) {
+    return { id: 'r' + (r.n = (r.n || 0) + 1), concierto: concierto, nombre: nombre, general: general, show: show, sonido: sonido, puntualidad: puntualidad, recinto: recinto, util: util, texto: texto, mia: false };
+  }
+  var resenas = [
+    r('cometas-cdmx', 'Daniela R.', 5, 5, 5, 4, 3, 42, 'El sonido estuvo impecable desde la primera canción. Tocaron casi dos horas y cerraron con las clásicas. Llega temprano, porque la fila de entrada avanza lento.'),
+    r('cometas-cdmx', 'Mariana L.', 5, 5, 5, 5, 4, 19, 'Las luces y las pantallas son otro nivel. Desde platea se ve y se escucha perfecto, no hace falta pagar pista.'),
+    r('cometas-cdmx', 'Óscar T.', 4, 5, 4, 3, 3, 11, 'Showazo, aunque salieron 35 minutos tarde. La salida del estacionamiento fue un caos.'),
+    r('cometas-gdl', 'Rodrigo P.', 4, 4, 4, 3, 4, 27, 'Gran repertorio, mezclaron el disco nuevo con los éxitos. Empezaron media hora tarde y el telonero se alargó de más.'),
+    r('cometas-gdl', 'Fernanda G.', 5, 5, 4, 4, 5, 8, 'Segunda vez que los veo y siguen mejorando. El recinto es cómodo y se entra rápido.'),
+    r('marea-gdl', 'Jorge M.', 3, 4, 2, 4, 4, 31, 'Buen show, pero en las gradas el audio se oía saturado. Si puedes, compra en pista.'),
+    r('marea-gdl', 'Paola S.', 4, 4, 3, 5, 4, 14, 'Empezaron puntuales y pusieron a bailar a todos. El sonido mejoró a la mitad del concierto.'),
+    r('valentina-mty', 'Itzel V.', 4, 5, 4, 2, 4, 22, 'La escenografía vale el boleto. Empezó 40 minutos tarde y aun así salí feliz.'),
+    r('valentina-mty', 'Andrés C.', 5, 5, 5, 4, 4, 17, 'Canta igual que en el disco. Hubo un momento acústico y medio público terminó llorando.'),
+    r('sierra-puebla', 'Lupita H.', 5, 5, 4, 5, 3, 25, 'Tres horas de música sin parar. El auditorio suena bien, pero los accesos se saturan a la salida.'),
+    r('sierra-puebla', 'Ramón E.', 4, 4, 4, 4, 4, 9, 'Buen ambiente familiar. La comida es cara, pero las filas avanzan rápido.')
+  ];
+
+  /* ---------- Estado ---------- */
+  var estado = { vista: 'inicio', ciudad: 'Puebla', rango: 92, texto: '', orden: 'fecha', utiles: {}, formulario: false };
+  var vista = document.getElementById('vista');
+  var aviso = document.getElementById('aviso');
+
+  /* ---------- Utilidades ---------- */
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); }
+  function dinero(n) { return '$' + n.toLocaleString('es-MX'); }
+  function pasado(x) { return x.fecha < hoy; }
+  function porFecha(a, b) { return a.fecha - b.fecha; }
+  function icono(id) { return '<svg aria-hidden="true"><use href="#i-' + id + '"></use></svg>'; }
+  function plural(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
+  function promedio(lista, campo) {
+    var vals = lista.map(function (x) { return x[campo]; }).filter(function (v) { return typeof v === 'number'; });
+    if (!vals.length) return null;
+    return vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+  }
+  function resenasDeGira(g) { return resenas.filter(function (x) { return porId[x.concierto].gira === g; }); }
+  function resenasDeRecinto(x) {
+    return resenas.filter(function (y) { var k = porId[y.concierto]; return k.recinto === x.recinto && k.ciudad === x.ciudad; });
+  }
+  function proximos(ciudad) { return conciertos.filter(function (x) { return !pasado(x) && x.ciudad === ciudad; }); }
+  function estrellas(n) {
+    var h = '<span class="estrellas" role="img" aria-label="' + n + ' de 5 estrellas">';
+    for (var i = 1; i <= 5; i++) h += '<svg aria-hidden="true"' + (i <= n ? ' class="on"' : '') + '><use href="#i-estrella"></use></svg>';
+    return h + '</span>';
+  }
+  var temporizador;
+  function avisar(texto) {
+    aviso.textContent = texto;
+    aviso.hidden = false;
+    clearTimeout(temporizador);
+    temporizador = setTimeout(function () { aviso.hidden = true; }, 4200);
+  }
+
+  /* ---------- Carteles generados ---------- */
+  function azar(semilla) {
+    var a = semilla >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var ESTILOS = {
+    anillos: function (x, W, H, f, a, b) {
+      var cx = W * 0.62, cy = H * 0.44, col = [a, f, b, f];
+      for (var i = 13; i >= 1; i--) { x.fillStyle = col[i % 4]; x.beginPath(); x.arc(cx, cy, i * W * 0.075, 0, Math.PI * 2); x.fill(); }
+      x.fillStyle = b; x.beginPath(); x.arc(W * 0.16, H * 0.84, W * 0.1, 0, Math.PI * 2); x.fill();
+    },
+    ondas: function (x, W, H, f, a, b) {
+      var n = 9, alto = H / n;
+      for (var i = -1; i <= n; i++) {
+        x.fillStyle = i % 2 ? a : b;
+        x.beginPath();
+        for (var px = 0; px <= W; px += 6) {
+          var y = i * alto + Math.sin(px / W * Math.PI * 4 + i * 0.7) * alto * 0.55;
+          if (px === 0) x.moveTo(px, y); else x.lineTo(px, y);
+        }
+        for (var qx = W; qx >= 0; qx -= 6) x.lineTo(qx, i * alto + alto * 0.5 + Math.sin(qx / W * Math.PI * 4 + i * 0.7) * alto * 0.55);
+        x.closePath(); x.fill();
+      }
+    },
+    puntos: function (x, W, H, f, a, b) {
+      x.fillStyle = b; x.beginPath(); x.arc(W * 0.36, H * 0.62, W * 0.4, 0, Math.PI * 2); x.fill();
+      var paso = W / 13, fx = W * 0.78, fy = H * 0.22, max = W * 1.05;
+      x.fillStyle = a;
+      for (var i = 0; i <= 13; i++) for (var j = 0; j <= 13; j++) {
+        var px = i * paso, py = j * paso;
+        var d = Math.sqrt((px - fx) * (px - fx) + (py - fy) * (py - fy));
+        var rad = paso * 0.5 * Math.max(0, 1 - d / max);
+        if (rad > 0.6) { x.beginPath(); x.arc(px, py, rad, 0, Math.PI * 2); x.fill(); }
+      }
+    },
+    barras: function (x, W, H, f, a, b, rnd) {
+      var n = 15, paso = W / n, medio = H * 0.56;
+      for (var i = 0; i < n; i++) {
+        var alto = (0.18 + rnd() * 0.8) * H * 0.48;
+        x.fillStyle = a; x.fillRect(i * paso + paso * 0.18, medio - alto, paso * 0.64, alto);
+        x.fillStyle = b; x.fillRect(i * paso + paso * 0.18, medio + H * 0.02, paso * 0.64, alto * 0.55);
+      }
+      x.fillStyle = f;
+      for (var y = 0; y < H; y += H / 40) x.fillRect(0, y, W, H / 160);
+    },
+    rayos: function (x, W, H, f, a, b) {
+      var cx = W * 0.5, cy = H * 0.98, n = 18, largo = W * 1.5;
+      for (var i = 0; i < n; i += 2) {
+        var t0 = Math.PI + (i / n) * Math.PI, t1 = Math.PI + ((i + 1) / n) * Math.PI;
+        x.fillStyle = a; x.beginPath(); x.moveTo(cx, cy);
+        x.lineTo(cx + Math.cos(t0) * largo, cy + Math.sin(t0) * largo);
+        x.lineTo(cx + Math.cos(t1) * largo, cy + Math.sin(t1) * largo);
+        x.closePath(); x.fill();
+      }
+      x.fillStyle = f; x.beginPath(); x.arc(cx, cy, W * 0.36, 0, Math.PI * 2); x.fill();
+      x.fillStyle = b; x.beginPath(); x.arc(cx, cy, W * 0.29, 0, Math.PI * 2); x.fill();
+    }
+  };
+  function pintarCarteles(raiz) {
+    Array.prototype.forEach.call(raiz.querySelectorAll('canvas[data-gira]'), function (lienzo) {
+      var g = GIRAS[lienzo.getAttribute('data-gira')];
+      var x = lienzo.getContext('2d');
+      if (!x || !g) return;
+      var W = lienzo.width, H = lienzo.height;
+      x.fillStyle = g.tintas[0]; x.fillRect(0, 0, W, H);
+      ESTILOS[g.estilo](x, W, H, g.tintas[0], g.tintas[1], g.tintas[2], azar(g.semilla));
+    });
+  }
+
+  /* ---------- Vista: cartelera ---------- */
+  function filtrados() {
+    var limite = masDias(hoy, estado.rango);
+    var texto = estado.texto.trim().toLowerCase();
+    var lista = proximos(estado.ciudad).filter(function (x) {
+      if (x.fecha > limite) return false;
+      if (!texto) return true;
+      var g = GIRAS[x.gira];
+      return (g.artista + ' ' + g.gira + ' ' + x.recinto + ' ' + g.genero).toLowerCase().indexOf(texto) !== -1;
+    });
+    lista.sort(function (a, b) {
+      if (estado.orden === 'precio') return a.desde - b.desde;
+      if (estado.orden === 'nota') return (promedio(resenasDeGira(b.gira), 'general') || 0) - (promedio(resenasDeGira(a.gira), 'general') || 0);
+      return a.fecha - b.fecha;
+    });
+    return lista;
+  }
+
+  function boletoHTML(x) {
+    var g = GIRAS[x.gira];
+    var deGira = resenasDeGira(x.gira);
+    var nota = promedio(deGira, 'general');
+    var lineaNota = nota === null
+      ? '<p class="nota apagado">Gira nueva, todavía sin reseñas</p>'
+      : '<p class="nota">' + icono('estrella') + '<strong>' + nota.toFixed(1) + ' de 5</strong><span class="apagado">' + plural(deGira.length, 'reseña', 'reseñas') + ' de la gira</span></p>';
+    return '<li class="boleto">' +
+      '<div class="boleto__fecha"><span class="dsem">' + DIAS_C[x.fecha.getDay()] + '</span><span class="dia">' + x.fecha.getDate() + '</span><span class="mes">' + MESES_C[x.fecha.getMonth()] + '</span></div>' +
+      '<div class="boleto__cartel"><canvas width="360" height="360" data-gira="' + x.gira + '" aria-hidden="true"></canvas></div>' +
+      '<div class="boleto__info">' +
+        '<h3 class="cartel"><a href="#' + x.id + '" data-ir="' + x.id + '">' + g.artista + '</a></h3>' +
+        '<p class="apagado">' + g.gira + ', ' + x.recinto + '</p>' + lineaNota +
+      '</div>' +
+      '<div class="boleto__accion"><p class="precio"><span>Desde</span><strong>' + dinero(x.desde) + '</strong></p>' +
+      '<a class="boton" href="#' + x.id + '" data-ir="' + x.id + '">Ver boletos<span class="solo-lector"> de ' + g.artista + '</span></a></div>' +
+    '</li>';
+  }
+
+  function resenaHTML(x, conArtista) {
+    var k = porId[x.concierto];
+    var lugar = (conArtista ? GIRAS[k.gira].artista + ', ' : '') + k.ciudad + ', ' + fechaMedia(k.fecha);
+    var marcada = !!estado.utiles[x.id];
+    return '<article class="resena" id="' + x.id + '">' +
+      '<div class="resena__arriba">' + estrellas(x.general) + '<span class="sello">Asistió</span></div>' +
+      '<p class="resena__texto">' + esc(x.texto) + '</p>' +
+      '<p class="resena__pie"><strong>' + esc(x.nombre) + (x.mia ? ' <span class="tuya">Tu reseña</span>' : '') + '</strong><span class="apagado">' + lugar + '</span></p>' +
+      (conArtista ? '' : '<button type="button" class="util" data-util="' + x.id + '" aria-pressed="' + marcada + '">Me sirvió (' + (x.util + (marcada ? 1 : 0)) + ')</button>') +
+    '</article>';
+  }
+
+  function inicioHTML() {
+    var opciones = CIUDADES.map(function (n) {
+      return '<button type="button" class="ciudades__op" data-ciudad="' + n + '" aria-pressed="' + (n === estado.ciudad) + '">' + n + '<span>' + plural(proximos(n).length, 'concierto', 'conciertos') + '</span></button>';
+    }).join('');
+    var rangos = [[1, 'Este fin de semana'], [30, 'Próximos 30 días'], [92, 'Próximos 3 meses']].map(function (p) {
+      return '<button type="button" class="ficha" data-rango="' + p[0] + '" aria-pressed="' + (estado.rango === p[0]) + '">' + p[1] + '</button>';
+    }).join('');
+    var destacadas = resenas.slice().sort(function (a, b) { return (b.mia - a.mia) || (b.util - a.util); }).slice(0, 3);
+    return '' +
+    '<section class="portada"><div class="centro">' +
+      '<div class="portada__titular">' +
+        '<h1 class="titular" id="titulo-vista" tabindex="-1"><span class="titular__linea">¿Quién toca en</span> ' +
+        '<span class="titular__linea"><button type="button" class="ciudad" id="ciudad-boton" aria-expanded="false" aria-controls="ciudad-lista"><span class="solo-lector">Cambiar de ciudad. Ciudad actual: </span><span id="ciudad-actual">' + estado.ciudad + '</span>' + icono('abajo') + '</button>?</span></h1>' +
+        '<div class="ciudades" id="ciudad-lista" hidden>' + opciones + '</div>' +
+      '</div>' +
+      '<p class="bajada">Todos los conciertos de tu ciudad en un solo lugar, con el enlace a la boletera oficial y reseñas de quienes ya fueron.</p>' +
+      '<div class="filtros">' +
+        '<div class="campo campo--buscar"><label for="buscar">Busca un artista, evento o recinto</label><input class="entrada" id="buscar" type="search" autocomplete="off" placeholder="Ej. Los Cometas del Sur" value="' + esc(estado.texto) + '"></div>' +
+        '<div class="campo"><span class="etiqueta" id="et-fechas">Fechas</span><div class="fichas" role="group" aria-labelledby="et-fechas">' + rangos + '</div></div>' +
+      '</div>' +
+    '</div></section>' +
+    '<section class="cartelera" aria-labelledby="cuenta"><div class="centro">' +
+      '<div class="encabezado"><h2 class="cartel t-seccion" id="cuenta" aria-live="polite"></h2>' +
+      '<div class="orden"><label for="orden">Ordenar por</label><select id="orden">' +
+        '<option value="fecha">Fecha más cercana</option><option value="nota">Mejor reseñados</option><option value="precio">Precio más bajo</option>' +
+      '</select></div></div>' +
+      '<div id="lista"></div>' +
+    '</div></section>' +
+    '<section class="voces" id="resenas" aria-labelledby="t-voces"><div class="centro">' +
+      '<h2 class="cartel t-seccion" id="t-voces">Lo que dicen quienes ya fueron</h2>' +
+      '<p class="apagado" style="margin-top:10px;max-width:36em">Solo pueden reseñar las personas que confirman que asistieron al concierto.</p>' +
+      '<div class="voces__lista">' + destacadas.map(function (x) { return resenaHTML(x, true); }).join('') + '</div>' +
+    '</div></section>' +
+    '<section class="cierre"><div class="centro"><h2 class="cartel">No vendemos boletos</h2>' +
+      '<p>Te llevamos a la boletera oficial de cada concierto y tú compras directo con ella.</p></div></section>';
+  }
+
+  function pintarLista() {
+    var lista = filtrados();
+    var cuenta = document.getElementById('cuenta');
+    var caja = document.getElementById('lista');
+    if (!cuenta || !caja) return;
+    cuenta.textContent = lista.length ? plural(lista.length, 'concierto', 'conciertos') + ' en ' + estado.ciudad : 'Sin conciertos en ' + estado.ciudad;
+    if (lista.length) {
+      caja.innerHTML = '<ol class="boletos">' + lista.map(boletoHTML).join('') + '</ol>';
+      pintarCarteles(caja);
+    } else {
+      var hayOtros = proximos(estado.ciudad).length > 0;
+      caja.innerHTML = '<div class="vacio"><p>' + (hayOtros
+        ? 'Ningún concierto de ' + estado.ciudad + ' coincide con tu búsqueda y esas fechas.'
+        : 'Todavía no hay conciertos anunciados en ' + estado.ciudad + '. Prueba con otra ciudad.') + '</p>' +
+        (hayOtros ? '<button type="button" class="boton boton--linea" data-quitar>Quitar filtros</button>' : '') + '</div>';
+    }
+  }
+
+  /* ---------- Vista: concierto ---------- */
+  function barrasHTML(lista, campos) {
+    return '<div class="barras">' + campos.map(function (p) {
+      var v = promedio(lista, p[0]);
+      if (v === null) return '';
+      return '<div class="barra-fila"><span>' + p[1] + '</span><i aria-hidden="true"><b style="width:' + (v / 5 * 100).toFixed(0) + '%"></b></i><strong>' + v.toFixed(1) + '</strong></div>';
+    }).join('') + '</div>';
+  }
+
+  function formularioHTML(pasadas) {
+    var PALABRAS = '';
+    var opciones = pasadas.map(function (x) { return '<option value="' + x.id + '">' + x.ciudad + ', ' + fechaMedia(x.fecha) + '</option>'; }).join('');
+    function botones(n, clase, interior) {
+      var h = '';
+      for (var i = 1; i <= 5; i++) h += '<button type="button" class="' + clase + '" data-valor="' + i + '" aria-pressed="false" aria-label="' + i + ' de 5">' + interior + '</button>';
+      return h;
+    }
+    var aspectos = [['show', 'Show en vivo'], ['sonido', 'Sonido'], ['puntualidad', 'Puntualidad'], ['recinto', 'El recinto']].map(function (p) {
+      return '<div class="aspecto"><span class="aspecto__nombre" id="et-' + p[0] + '">' + p[1] + '</span><span class="tramos" role="group" aria-labelledby="et-' + p[0] + '" data-grupo="' + p[0] + '">' + botones(5, 'tramo', '<i></i>') + '</span></div>';
+    }).join('');
+    return '<form class="formulario" id="form-resena" novalidate>' +
+      '<h3 class="cartel">Tu reseña</h3>' +
+      '<div class="campo"><label for="r-fecha">¿A qué fecha fuiste?</label><select class="entrada" id="r-fecha">' + opciones + '</select></div>' +
+      '<fieldset class="grupo"><legend>¿Cómo estuvo el concierto?</legend>' +
+        '<div class="calif"><span class="calif__botones" data-grupo="general">' + botones(5, 'estrella', '<svg aria-hidden="true"><use href="#i-estrella"></use></svg>') + '</span><span class="calif__palabra" id="r-palabra" aria-live="polite">' + PALABRAS + '</span></div>' +
+        '<p class="error" id="e-general" hidden>Elige de 1 a 5 estrellas.</p></fieldset>' +
+      '<fieldset class="grupo"><legend>Detalles, si quieres</legend><div class="aspectos">' + aspectos + '</div></fieldset>' +
+      '<div class="campo"><label for="r-texto">Cuéntalo con tus palabras</label><textarea class="entrada" id="r-texto" placeholder="¿Qué te gustó? ¿Qué le dirías a alguien que va a ir?"></textarea><p class="error" id="e-texto" hidden>Escribe al menos 20 caracteres para que tu reseña le sirva a alguien.</p></div>' +
+      '<div class="doble"><div class="campo"><label for="r-nombre">Tu nombre</label><input class="entrada" id="r-nombre" type="text" autocomplete="given-name" placeholder="Ej. Sofía M."><p class="error" id="e-nombre" hidden>Escribe tu nombre.</p></div></div>' +
+      '<div><label class="casilla" for="r-asisti"><input type="checkbox" id="r-asisti"><span>Confirmo que asistí a este concierto</span></label><p class="error" id="e-asisti" hidden style="margin-top:8px">Solo pueden reseñar quienes asistieron.</p></div>' +
+      '<div class="formulario__pie"><button type="submit" class="boton">Publicar reseña</button><button type="button" class="enlace" data-cerrar-resena>Cancelar</button>' +
+      '<span class="letra-chica" style="margin:0">Es un prototipo: tu reseña se borra al recargar la página.</span></div>' +
+    '</form>';
+  }
+
+  function conciertoHTML(x) {
+    var g = GIRAS[x.gira];
+    var fechasGira = conciertos.filter(function (y) { return y.gira === x.gira; }).sort(porFecha);
+    var pasadas = fechasGira.filter(pasado);
+    var deGira = resenasDeGira(x.gira).sort(function (a, b) { return (b.mia - a.mia) || (b.util - a.util); });
+    var deRecinto = resenasDeRecinto(x);
+    var nota = promedio(deGira, 'general');
+    var notaRecinto = promedio(deRecinto, 'recinto');
+    var zonas = [['Pista', Math.round(x.desde * 2.2 / 10) * 10], ['Platea', Math.round(x.desde * 1.5 / 10) * 10], ['Gradas', x.desde]];
+
+    var paradas = fechasGira.map(function (y) {
+      var dia = '<span class="parada__dia">' + fechaCorta(y.fecha) + '</span>';
+      if (pasado(y)) {
+        var n = resenas.filter(function (z) { return z.concierto === y.id; }).length;
+        return '<li><span class="parada parada--pasada">' + dia + '<span><strong>' + y.ciudad + '</strong><span>Ya pasó, ' + plural(n, 'reseña', 'reseñas') + '</span></span></span></li>';
+      }
+      if (y.id === x.id) return '<li><span class="parada" aria-current="true">' + dia + '<span><strong>' + y.ciudad + '</strong><span>Estás viendo esta fecha</span></span></span></li>';
+      return '<li><a class="parada" href="#' + y.id + '" data-ir="' + y.id + '">' + dia + '<span><strong>' + y.ciudad + '</strong><span>Desde ' + dinero(y.desde) + '</span></span></a></li>';
+    }).join('');
+
+    var resumen;
+    if (nota === null) {
+      resumen = '<p class="subtitulo" style="margin-top:0">Esta gira todavía no tiene reseñas</p><p class="apagado">' +
+        (pasadas.length ? 'Sé la primera persona en contar cómo estuvo.' : 'Las reseñas se abren cuando pase la primera fecha de la gira.') + '</p>';
+    } else {
+      resumen = '<p class="promedio"><b>' + nota.toFixed(1) + '</b><span class="apagado">de 5, con ' + plural(deGira.length, 'reseña', 'reseñas') + '</span></p>' +
+        '<h3 class="subtitulo">La gira</h3>' + barrasHTML(deGira, [['show', 'Show en vivo'], ['sonido', 'Sonido'], ['puntualidad', 'Puntualidad']]);
+    }
+    resumen += '<h3 class="subtitulo">El recinto: ' + x.recinto + '</h3>' + (notaRecinto === null
+      ? '<p class="apagado">Todavía nadie ha reseñado este recinto.</p>'
+      : barrasHTML(deRecinto, [['recinto', 'Calificación']]) + '<p class="letra-chica">Según ' + plural(deRecinto.length, 'reseña', 'reseñas') + ' de otros conciertos en este lugar.</p>');
+
+    var bloqueEscribir = '';
+    if (pasadas.length) {
+      bloqueEscribir = estado.formulario
+        ? formularioHTML(pasadas)
+        : '<div class="invita"><p>¿Ya fuiste a esta gira?</p><button type="button" class="boton" data-abrir-resena>Escribir reseña</button></div>';
+    }
+
+    return '<article class="concierto"><div class="centro">' +
+      '<a class="volver" href="#inicio" data-ir="inicio">' + icono('atras') + 'Cartelera de ' + estado.ciudad + '</a>' +
+      '<div class="cabeza">' +
+        '<div class="cartelote"><canvas width="760" height="760" data-gira="' + x.gira + '" aria-hidden="true"></canvas></div>' +
+        '<div><p class="cuando">' + fechaLarga(x.fecha) + ', ' + x.hora + '</p>' +
+          '<h1 class="cartel" id="titulo-vista" tabindex="-1">' + g.artista + '</h1>' +
+          '<p class="gira-nombre">' + g.gira + '</p>' +
+          '<dl class="datos"><div><dt>Recinto</dt><dd>' + x.recinto + ', ' + x.ciudad + '</dd></div><div><dt>Apertura de puertas</dt><dd>' + x.puertas + '</dd></div><div><dt>Género</dt><dd>' + g.genero + '</dd></div></dl>' +
+        '</div>' +
+      '</div>' +
+      '<section class="taquilla" aria-labelledby="t-comprar">' +
+        '<div class="taquilla__venta"><h2 class="cartel" id="t-comprar">Dónde comprar</h2>' +
+          '<div class="opcion"><p><strong>Boletera oficial</strong><span>Desde ' + dinero(x.desde) + ' más cargos por servicio</span></p><button type="button" class="boton" data-comprar>Ir a comprar' + icono('fuera') + '</button></div>' +
+          '<div class="opcion"><p><strong>Taquilla del recinto</strong><span>Sin cargos por servicio. Abre el día del concierto desde las 12:00.</span></p></div>' +
+        '</div>' +
+        '<div class="taquilla__zonas"><table class="zonas"><caption>Precios por zona</caption><tbody>' +
+          zonas.map(function (z) { return '<tr><th scope="row">' + z[0] + '</th><td>' + dinero(z[1]) + '</td></tr>'; }).join('') +
+          '</tbody></table><p class="letra-chica">Precios de referencia. Confírmalos en la boletera antes de pagar.</p></div>' +
+      '</section>' +
+      '<section class="fechas" aria-labelledby="t-fechas"><h2 class="cartel" id="t-fechas">Fechas de la gira</h2><ol class="fechas__lista">' + paradas + '</ol></section>' +
+    '</div></article>' +
+    '<section class="opiniones" aria-labelledby="t-opiniones"><div class="centro">' +
+      '<h2 class="cartel t-seccion" id="t-opiniones">Así estuvo esta gira en otras ciudades</h2>' +
+      '<p class="apagado" style="margin-top:10px;max-width:36em">Como este concierto aún no pasa, te mostramos lo que dijeron quienes fueron a las fechas anteriores.</p>' +
+      '<div class="opiniones__cuerpo"><div>' + resumen + '</div>' +
+      '<div class="opiniones__lista" id="opiniones-lista">' + bloqueEscribir + deGira.map(function (z) { return resenaHTML(z, false); }).join('') + '</div></div>' +
+    '</div></section>';
+  }
+
+  /* ---------- Navegación ---------- */
+  function pintar(enfocar) {
+    var x = porId[estado.vista];
+    if (x && !pasado(x)) {
+      vista.innerHTML = conciertoHTML(x);
+      document.title = GIRAS[x.gira].artista + ' en ' + x.ciudad;
+    } else {
+      estado.vista = 'inicio';
+      vista.innerHTML = inicioHTML();
+      document.getElementById('orden').value = estado.orden;
+      pintarLista();
+      document.title = '¿Quién toca?';
+    }
+    pintarCarteles(vista);
+    if (enfocar) {
+      var t = document.getElementById('titulo-vista');
+      window.scrollTo(0, 0);
+      if (t) t.focus({ preventScroll: true });
+    }
+  }
+  function ir(destino, ancla) {
+    estado.vista = destino;
+    estado.formulario = false;
+    try { if (location.hash !== '#' + destino) history.pushState(null, '', '#' + destino); } catch (e) { /* sin historial */ }
+    pintar(true);
+    if (ancla) { var el = document.getElementById(ancla); if (el) el.scrollIntoView(); }
+  }
+  function leerHash() {
+    var h = (location.hash || '').replace('#', '');
+    estado.vista = porId[h] ? h : 'inicio';
+    estado.formulario = false;
+  }
+  window.addEventListener('popstate', function () { leerHash(); pintar(true); });
+
+  function cerrarCiudades(devolverFoco) {
+    var lista = document.getElementById('ciudad-lista'), boton = document.getElementById('ciudad-boton');
+    if (!lista || lista.hidden) return;
+    lista.hidden = true;
+    boton.setAttribute('aria-expanded', 'false');
+    if (devolverFoco) boton.focus();
+  }
+
+  /* ---------- Eventos ---------- */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-ir], #ciudad-boton, [data-ciudad], [data-rango], [data-quitar], [data-util], [data-comprar], [data-abrir-resena], [data-cerrar-resena], [data-valor]');
+    if (!el) { cerrarCiudades(false); return; }
+
+    if (el.hasAttribute('data-ir')) {
+      e.preventDefault();
+      ir(el.getAttribute('data-ir'), el.getAttribute('data-ancla'));
+    } else if (el.id === 'ciudad-boton') {
+      var lista = document.getElementById('ciudad-lista');
+      if (lista.hidden) {
+        lista.hidden = false;
+        el.setAttribute('aria-expanded', 'true');
+        (lista.querySelector('[aria-pressed="true"]') || lista.querySelector('button')).focus();
+      } else cerrarCiudades(false);
+    } else if (el.hasAttribute('data-ciudad')) {
+      estado.ciudad = el.getAttribute('data-ciudad');
+      document.getElementById('ciudad-actual').textContent = estado.ciudad;
+      Array.prototype.forEach.call(document.querySelectorAll('[data-ciudad]'), function (b) { b.setAttribute('aria-pressed', b === el); });
+      cerrarCiudades(true);
+      pintarLista();
+    } else if (el.hasAttribute('data-rango')) {
+      estado.rango = Number(el.getAttribute('data-rango'));
+      Array.prototype.forEach.call(document.querySelectorAll('[data-rango]'), function (b) { b.setAttribute('aria-pressed', b === el); });
+      pintarLista();
+    } else if (el.hasAttribute('data-quitar')) {
+      estado.texto = ''; estado.rango = 92;
+      pintar(false);
+      document.getElementById('buscar').focus();
+    } else if (el.hasAttribute('data-util')) {
+      var id = el.getAttribute('data-util');
+      estado.utiles[id] = !estado.utiles[id];
+      var res = resenas.filter(function (z) { return z.id === id; })[0];
+      el.setAttribute('aria-pressed', estado.utiles[id]);
+      el.textContent = 'Me sirvió (' + (res.util + (estado.utiles[id] ? 1 : 0)) + ')';
+    } else if (el.hasAttribute('data-comprar')) {
+      avisar('En la app real, este botón abre la boletera oficial en otra pestaña.');
+    } else if (el.hasAttribute('data-abrir-resena')) {
+      estado.formulario = true;
+      pintar(false);
+      var f = document.getElementById('form-resena');
+      f.scrollIntoView({ block: 'start' });
+      document.getElementById('r-fecha').focus({ preventScroll: true });
+    } else if (el.hasAttribute('data-cerrar-resena')) {
+      estado.formulario = false;
+      pintar(false);
+      var abrir = document.querySelector('[data-abrir-resena]');
+      if (abrir) abrir.focus();
+    } else if (el.hasAttribute('data-valor')) {
+      var grupo = el.closest('[data-grupo]');
+      var valor = Number(el.getAttribute('data-valor'));
+      grupo.setAttribute('data-elegido', valor);
+      Array.prototype.forEach.call(grupo.querySelectorAll('[data-valor]'), function (b) {
+        var v = Number(b.getAttribute('data-valor'));
+        b.classList.toggle('on', v <= valor);
+        b.setAttribute('aria-pressed', v === valor);
+      });
+      if (grupo.getAttribute('data-grupo') === 'general') {
+        document.getElementById('r-palabra').textContent = ['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Increíble'][valor];
+        document.getElementById('e-general').hidden = true;
+      }
+    }
+  });
+
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarCiudades(true); });
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'buscar') { estado.texto = e.target.value; pintarLista(); }
+    // Al corregir un campo, su mensaje de error desaparece.
+    var aviso2 = { 'r-texto': 'e-texto', 'r-nombre': 'e-nombre' }[e.target.id];
+    if (aviso2) document.getElementById(aviso2).hidden = true;
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.id === 'orden') { estado.orden = e.target.value; pintarLista(); }
+    if (e.target.id === 'r-asisti') document.getElementById('e-asisti').hidden = true;
+  });
+
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'form-resena') return;
+    e.preventDefault();
+    function elegido(nombre) {
+      var v = e.target.querySelector('[data-grupo="' + nombre + '"]').getAttribute('data-elegido');
+      return v ? Number(v) : null;
+    }
+    var texto = document.getElementById('r-texto').value.trim();
+    var nombre = document.getElementById('r-nombre').value.trim();
+    var general = elegido('general');
+    var fallas = [
+      ['e-general', general === null, e.target.querySelector('[data-grupo="general"] button')],
+      ['e-texto', texto.length < 20, document.getElementById('r-texto')],
+      ['e-nombre', nombre.length < 2, document.getElementById('r-nombre')],
+      ['e-asisti', !document.getElementById('r-asisti').checked, document.getElementById('r-asisti')]
+    ];
+    var primera = null;
+    fallas.forEach(function (f) {
+      document.getElementById(f[0]).hidden = !f[1];
+      if (f[1] && !primera) primera = f[2];
+    });
+    if (primera) { primera.focus(); return; }
+
+    var nueva = { id: 'mia' + Date.now(), concierto: document.getElementById('r-fecha').value, nombre: nombre, general: general, show: elegido('show'), sonido: elegido('sonido'), puntualidad: elegido('puntualidad'), recinto: elegido('recinto'), util: 0, texto: texto, mia: true };
+    resenas.push(nueva);
+    estado.formulario = false;
+    pintar(false);
+    var puesta = document.getElementById(nueva.id);
+    if (puesta) puesta.scrollIntoView({ block: 'center' });
+    avisar('Reseña publicada');
+  });
+
+  leerHash();
+  pintar(false);
+})();
+</script>
+
+</body>
+</html>

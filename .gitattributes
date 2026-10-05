@@ -1,0 +1,3 @@
+# Finales de línea LF en todo el repo: los contenedores son Linux y un
+# script con CRLF falla dentro de Docker.
+* text=auto eol=lf
