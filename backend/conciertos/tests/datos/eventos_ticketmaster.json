@@ -1,0 +1,145 @@
+[
+  {
+    "name": "Los Cometas del Sur - Gira Polvo de Estrellas",
+    "type": "event",
+    "id": "TM-COMETAS-CDMX",
+    "url": "https://www.ticketmaster.com.mx/los-cometas-del-sur/event/TM-COMETAS-CDMX",
+    "locale": "en-us",
+    "images": [
+      {"ratio": "16_9", "url": "https://s1.ticketm.net/dam/c/fallback_16_9.jpg", "width": 1024, "height": 576, "fallback": true},
+      {"ratio": "16_9", "url": "https://s1.ticketm.net/dam/a/cometas_16_9_1024.jpg", "width": 1024, "height": 576, "fallback": false},
+      {"ratio": "16_9", "url": "https://s1.ticketm.net/dam/a/cometas_16_9_2048.jpg", "width": 2048, "height": 1152, "fallback": false},
+      {"ratio": "3_2", "url": "https://s1.ticketm.net/dam/a/cometas_3_2_640.jpg", "width": 640, "height": 427, "fallback": false}
+    ],
+    "dates": {
+      "start": {"localDate": "2026-11-20", "localTime": "21:00:00", "dateTime": "2026-11-21T03:00:00Z", "dateTBD": false, "dateTBA": false, "timeTBA": false, "noSpecificTime": false},
+      "timezone": "America/Mexico_City",
+      "status": {"code": "onsale"}
+    },
+    "classifications": [{"primary": true, "segment": {"name": "Music"}, "genre": {"name": "Rock"}, "subGenre": {"name": "Rock"}}],
+    "pleaseNote": "Límite de edad: Todas las edades.",
+    "_embedded": {
+      "venues": [{
+        "name": "Auditorio Nacional",
+        "type": "venue",
+        "id": "TM-V-AUDITORIO",
+        "postalCode": "11580",
+        "timezone": "America/Mexico_City",
+        "city": {"name": "Ciudad de México"},
+        "state": {"name": "Ciudad de México"},
+        "country": {"name": "Mexico", "countryCode": "MX"},
+        "address": {"line1": "Paseo de la Reforma 50"},
+        "location": {"longitude": "-99.1949", "latitude": "19.4246"}
+      }],
+      "attractions": [
+        {
+          "name": "Los Cometas del Sur",
+          "type": "attraction",
+          "id": "TM-A-COMETAS",
+          "images": [{"ratio": "16_9", "url": "https://s1.ticketm.net/dam/a/cometas_artista.jpg", "width": 1024, "height": 576, "fallback": false}],
+          "classifications": [{"primary": true, "genre": {"name": "Rock"}}]
+        },
+        {
+          "name": "Marea Roja",
+          "type": "attraction",
+          "id": "TM-A-MAREA",
+          "images": [],
+          "classifications": [{"primary": true, "genre": {"name": "Latin"}}]
+        }
+      ]
+    }
+  },
+  {
+    "name": "Valentina Robles: Cartas que no envié",
+    "type": "event",
+    "id": "TM-VALENTINA-GDL",
+    "url": "https://www.ticketmaster.com.mx/valentina-robles/event/TM-VALENTINA-GDL",
+    "images": [{"ratio": "3_2", "url": "https://s1.ticketm.net/dam/a/valentina_3_2.jpg", "width": 1024, "height": 683, "fallback": false}],
+    "dates": {
+      "start": {"localDate": "2026-12-05", "dateTBD": false, "dateTBA": false, "timeTBA": true, "noSpecificTime": false},
+      "timezone": "America/Mexico_City",
+      "status": {"code": "onsale"}
+    },
+    "classifications": [{"primary": true, "segment": {"name": "Music"}, "genre": {"name": "Ballads/Romantic"}}],
+    "_embedded": {
+      "venues": [{
+        "name": "Estadio Akron",
+        "id": "TM-V-AKRON",
+        "city": {"name": "Zapopan"},
+        "state": {"name": "Jalisco"},
+        "address": {"line1": "Circuito JVC 2800"},
+        "location": {"longitude": "-103.4627", "latitude": "20.6817"}
+      }],
+      "attractions": [{"name": "Valentina Robles", "id": "TM-A-VALENTINA", "classifications": [{"genre": {"name": "Pop"}}]}]
+    }
+  },
+  {
+    "name": "Niebla Eléctrica",
+    "type": "event",
+    "id": "TM-NIEBLA-MTY",
+    "url": "https://www.ticketmaster.com.mx/niebla-electrica/event/TM-NIEBLA-MTY",
+    "images": [{"ratio": "16_9", "url": "https://s1.ticketm.net/dam/c/fallback_16_9.jpg", "width": 1024, "height": 576, "fallback": true}],
+    "dates": {
+      "start": {"localDate": "2027-01-15", "localTime": "22:00:00", "dateTime": "2027-01-16T04:00:00Z", "timeTBA": false, "noSpecificTime": false},
+      "timezone": "America/Monterrey",
+      "status": {"code": "cancelled"}
+    },
+    "classifications": [{"primary": true, "segment": {"name": "Music"}, "genre": {"name": "Dance/Electronic"}}],
+    "priceRanges": [
+      {"type": "standard", "currency": "MXN", "min": 450.0, "max": 1800.0},
+      {"type": "standard including fees", "currency": "MXN", "min": 520.5, "max": 2050.0}
+    ],
+    "_embedded": {
+      "venues": [{
+        "name": "Arena Monterrey",
+        "id": "TM-V-ARENA-MTY",
+        "city": {"name": "Monterrey"},
+        "state": {"name": "Nuevo León"},
+        "address": {"line1": "Av. Madero 2500"},
+        "location": {"longitude": "-100.2848", "latitude": "25.6799"}
+      }],
+      "attractions": [{"name": "Niebla Eléctrica", "id": "TM-A-NIEBLA", "classifications": [{"genre": {"name": "Dance/Electronic"}}]}]
+    }
+  },
+  {
+    "name": "Los Cometas del Sur VIP + MEET&GREET",
+    "type": "event",
+    "id": "TM-COMETAS-VIP",
+    "url": "https://www.ticketmaster.com.mx/los-cometas-del-sur/event/TM-COMETAS-VIP",
+    "dates": {
+      "start": {"localDate": "2026-11-20", "localTime": "21:00:00", "dateTime": "2026-11-21T03:00:00Z"},
+      "status": {"code": "onsale"}
+    },
+    "_embedded": {
+      "venues": [{"name": "Auditorio Nacional", "id": "TM-V-AUDITORIO", "location": {"longitude": "-99.1949", "latitude": "19.4246"}}],
+      "attractions": [{"name": "Los Cometas del Sur", "id": "TM-A-COMETAS"}]
+    }
+  },
+  {
+    "name": "Banda Sierra Madre 25 años",
+    "type": "event",
+    "id": "TM-SIERRA-MERIDA",
+    "url": "https://www.ticketmaster.com.mx/banda-sierra-madre/event/TM-SIERRA-MERIDA",
+    "dates": {
+      "start": {"localDate": "2026-11-28", "localTime": "20:00:00", "dateTime": "2026-11-29T02:00:00Z"},
+      "status": {"code": "onsale"}
+    },
+    "_embedded": {
+      "venues": [{"name": "Foro GNP Mérida", "id": "TM-V-MERIDA", "city": {"name": "Mérida"}, "location": {"longitude": "-89.5926", "latitude": "20.9674"}}],
+      "attractions": [{"name": "Banda Sierra Madre", "id": "TM-A-SIERRA"}]
+    }
+  },
+  {
+    "name": "Noche de Tributos",
+    "type": "event",
+    "id": "TM-TRIBUTOS-CDMX",
+    "url": "https://www.ticketmaster.com.mx/noche-de-tributos/event/TM-TRIBUTOS-CDMX",
+    "dates": {
+      "start": {"localDate": "2026-11-14", "localTime": "20:30:00", "dateTime": "2026-11-15T02:30:00Z"},
+      "status": {"code": "onsale"}
+    },
+    "_embedded": {
+      "venues": [{"name": "Teatro Metropolitan", "id": "TM-V-METROPOLITAN", "location": {"longitude": "-99.1453", "latitude": "19.4352"}}]
+    }
+  }
+]
