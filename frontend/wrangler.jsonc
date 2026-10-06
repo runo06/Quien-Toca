@@ -1,0 +1,11 @@
+// Cloudflare Workers: publica la carpeta dist (el build de Vite) como archivos estáticos.
+{
+  "name": "quien-toca", // debe coincidir con el nombre del proyecto en Cloudflare
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // Cualquier dirección que no sea un archivo (/cdmx, /concierto/...) recibe
+    // index.html y React Router decide qué mostrar.
+    "not_found_handling": "single-page-application"
+  }
+}

@@ -17,7 +17,7 @@ Nombre técnico: `quien-toca`.
 
 ```mermaid
 flowchart LR
-    V([Visitante]) --> CF["Cloudflare Pages<br/>React + Vite"]
+    V([Visitante]) --> CF["Cloudflare Workers<br/>React + Vite"]
     CF -- "fetch /api/..." --> R["Render<br/>Django REST + gunicorn"]
     R --> N[("Neon<br/>PostgreSQL")]
     GA["GitHub Actions<br/>cada noche"] -- importar_ticketmaster --> N
@@ -120,5 +120,5 @@ frontend/src/
 render.yaml              configuración del backend en Render
 fase0/                   exploración inicial de los datos (ver docs/fase0-hallazgos.md)
 docs/diseno/             prototipo visual
-docs/publicacion.md      guía de publicación (Neon, Render, Cloudflare Pages)
+docs/publicacion.md      guía de publicación (Neon, Render, Cloudflare Workers)
 ```
