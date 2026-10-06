@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router';
 import { fechaCorta } from '../../utilidades/fechas.js';
-import { dinero } from '../../utilidades/texto.js';
+import { dinero, plural } from '../../utilidades/texto.js';
 
 /** Las fechas del mismo artista; las pasadas en gris y la actual marcada. */
 export default function OtrasFechas({ concierto }) {
@@ -33,7 +33,7 @@ export default function OtrasFechas({ concierto }) {
             return (
               <li key={fecha.slug}>
                 <span className="parada parada--pasada">
-                  {dia}<span>{ciudad}<span>Ya pasó</span></span>
+                  {dia}<span>{ciudad}<span>Ya pasó{fecha.resenas ? `, ${plural(fecha.resenas, 'reseña', 'reseñas')}` : ''}</span></span>
                 </span>
               </li>
             );

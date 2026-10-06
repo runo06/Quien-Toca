@@ -65,8 +65,23 @@ docker compose exec backend python manage.py createsuperuser
 |---|---|
 | `GET /api/salud/` | — (responde sin tocar la base) |
 | `GET /api/ciudades/` | — |
-| `GET /api/conciertos/` | `ciudad`, `q`, `desde`, `hasta` (AAAA-MM-DD), `orden` (`fecha` o `precio`), `pagina` |
-| `GET /api/conciertos/<slug>/` | — |
+| `GET /api/conciertos/` | `ciudad`, `q`, `desde`, `hasta` (AAAA-MM-DD), `orden` (`fecha`, `precio` o `nota`), `pagina` |
+| `GET /api/conciertos/<slug>/` | — (incluye la calificación del artista y del recinto) |
+| `POST /api/cuentas/registro/` | `nombre`, `email`, `password` → usuario y tokens |
+| `POST /api/cuentas/entrar/` | `email`, `password` → usuario y tokens |
+| `POST /api/cuentas/renovar/` | `refresh` → tokens nuevos (el refresh viejo queda anulado) |
+| `POST /api/cuentas/salir/` | `refresh` |
+| `GET /api/cuentas/yo/` | 🔒 |
+| `GET /api/resenas/` | `concierto`, `artista`, `recinto`, `ciudad`, `pagina` |
+| `POST /api/resenas/` | 🔒 `concierto`, `general` (1-5), `show`, `sonido`, `puntualidad`, `recinto` (opcionales), `texto` (20+), `asistio` |
+| `PATCH`, `DELETE /api/resenas/<id>/` | 🔒 solo quien la escribió |
+| `GET /api/resenas/mias/` | 🔒 |
+| `POST`, `DELETE /api/resenas/<id>/util/` | 🔒 "Me sirvió" (no en las propias) |
+| `POST /api/resenas/<id>/reportar/` | 🔒 `motivo`, `comentario` |
+
+🔒 = con sesión: cabecera `Authorization: Bearer <access>`. El access dura 15 minutos y el
+refresh 30 días. Los reportes se revisan en el panel: **Reseñas › Reportes** (acciones
+"Aceptar: ocultar la reseña" y "Descartar").
 
 ### Importar conciertos de Ticketmaster
 
@@ -101,19 +116,22 @@ En GitHub corren solas en cada push ([`.github/workflows/pruebas.yml`](.github/w
 ```
 backend/
 ├── config/              configuración de Django
-└── conciertos/
-    ├── models.py        Ciudad, Recinto, Artista, Concierto, PrecioZona
-    ├── admin.py         panel de administración
-    ├── views.py         API REST (serializers.py, urls.py, paginacion.py)
-    ├── importacion/     cliente de Ticketmaster, traducción e importador
-    └── tests/           pruebas con respuestas de ejemplo (sin llamar a la API)
+├── conciertos/
+│   ├── models.py        Ciudad, Recinto, Artista, Concierto, PrecioZona
+│   ├── admin.py         panel de administración
+│   ├── views.py         API REST (serializers.py, urls.py, paginacion.py)
+│   ├── importacion/     cliente de Ticketmaster, traducción e importador
+│   └── tests/           pruebas con respuestas de ejemplo (sin llamar a la API)
+├── cuentas/             registro, entrar, salir (JWT con simplejwt)
+└── resenas/             Resena, VotoUtil, Reporte; promedios en calificaciones.py
 frontend/src/
 ├── App.jsx              rutas
-├── api.js               llamadas al backend (reintenta mientras el servidor despierta)
+├── api.js               llamadas al backend: sesión JWT y reintentos mientras el servidor despierta
 ├── contexto/            ciudades compartidas
-├── hooks/               usarPeticion, usarCartelera
-├── paginas/             Inicio, Concierto, No encontrada
+├── hooks/               usarPeticion, usarCartelera, usarResenas, usarSesion
+├── paginas/             Inicio, Concierto, Entrar/Registro, No encontrada
 ├── componentes/         Boleto, SelectorCiudad, Taquilla, Cartel, AvisoDespertando...
+│   └── resenas/         Opiniones, TarjetaResena, FormularioResena, Estrellas...
 ├── utilidades/          fechas, rangos, textos
 └── estilos/base.css     tokens y estilos del prototipo
 .github/workflows/       pruebas en cada push e importación nocturna

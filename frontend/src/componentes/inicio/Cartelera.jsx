@@ -62,6 +62,7 @@ export default function Cartelera({ ciudad, cartelera, orden, alCambiarOrden, ha
             <label htmlFor="orden">Ordenar por</label>
             <select id="orden" value={orden} onChange={(evento) => alCambiarOrden(evento.target.value)}>
               <option value="fecha">Fecha más cercana</option>
+              <option value="nota">Mejor reseñados</option>
               <option value="precio">Precio más bajo</option>
             </select>
           </div>

@@ -4,6 +4,7 @@ import CabezaConcierto from '../componentes/concierto/CabezaConcierto.jsx';
 import OtrasFechas from '../componentes/concierto/OtrasFechas.jsx';
 import Taquilla from '../componentes/concierto/Taquilla.jsx';
 import Icono from '../componentes/Icono.jsx';
+import Opiniones from '../componentes/resenas/Opiniones.jsx';
 import MensajeError from '../componentes/MensajeError.jsx';
 import { usarPeticion } from '../hooks/usarPeticion.js';
 import { usarTituloDocumento } from '../hooks/usarTituloDocumento.js';
@@ -30,7 +31,7 @@ function ConciertoCargando() {
 export default function PaginaConcierto() {
   const { slug } = useParams();
   const ubicacion = useLocation();
-  const { datos: concierto, cargando, error, reintentar } = usarPeticion(
+  const { datos: concierto, cargando, error, reintentar, refrescar } = usarPeticion(
     (signal) => obtenerConcierto(slug, signal),
     [slug],
   );
@@ -48,24 +49,28 @@ export default function PaginaConcierto() {
   const volverA = ubicacion.state?.desde ?? `/${ciudad.slug}`;
 
   return (
-    <article className="concierto">
-      <div className="centro">
-        <Link className="volver" to={volverA}>
-          <Icono nombre="atras" />
-          Cartelera de {ciudad.nombre}
-        </Link>
-        {concierto.estado === 'cancelado' && (
-          <p className="aviso-estado" role="status">Este concierto fue cancelado.</p>
-        )}
-        {(concierto.estado === 'pospuesto' || concierto.estado === 'reprogramado') && (
-          <p className="aviso-estado" role="status">
-            Este concierto fue {concierto.estado}. Confirma la nueva fecha en la boletera.
-          </p>
-        )}
-        <CabezaConcierto concierto={concierto} />
-        <Taquilla concierto={concierto} />
-        <OtrasFechas concierto={concierto} />
-      </div>
-    </article>
+    <>
+      <article className="concierto">
+        <div className="centro">
+          <Link className="volver" to={volverA}>
+            <Icono nombre="atras" />
+            Cartelera de {ciudad.nombre}
+          </Link>
+          {concierto.estado === 'cancelado' && (
+            <p className="aviso-estado" role="status">Este concierto fue cancelado.</p>
+          )}
+          {(concierto.estado === 'pospuesto' || concierto.estado === 'reprogramado') && (
+            <p className="aviso-estado" role="status">
+              Este concierto fue {concierto.estado}. Confirma la nueva fecha en la boletera.
+            </p>
+          )}
+          <CabezaConcierto concierto={concierto} />
+          <Taquilla concierto={concierto} />
+          <OtrasFechas concierto={concierto} />
+        </div>
+      </article>
+      {/* refrescar: el promedio se actualiza tras publicar, sin volver a mostrar "cargando". */}
+      <Opiniones concierto={concierto} alCambiarCalificaciones={refrescar} />
+    </>
   );
 }

@@ -1,0 +1,69 @@
+/* Reseñas: tarjeta, estrellas, sello "Asistió". Copiado del prototipo (docs/diseno). */
+.resena { display: flex; flex-direction: column; gap: 14px; padding: 24px; background: var(--boleto-2); border-radius: 14px; min-width: 0; }
+.resena__arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; }
+.resena__texto { font-size: 1.05rem; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
+.resena__pie { margin-top: auto; font-size: 0.9rem; }
+.resena__pie strong { display: block; }
+.resena__pie a { text-decoration: none; }
+.resena__pie a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.resena__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; }
+.resena__acciones .enlace { font-size: 0.9rem; padding-block: 8px; }
+.resena__confirmar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-top: 14px; border-top: 1px solid var(--corte); }
+.resena__confirmar p { flex-basis: 100%; font-weight: 600; }
+.estrellas { display: inline-flex; gap: 3px; }
+.estrellas span { display: flex; }
+.estrellas svg { width: 20px; height: 20px; color: var(--corte); }
+.estrellas .on svg { color: var(--lima); }
+.sello { display: inline-block; font-family: var(--f-cartel); font-size: 0.86rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rosa); border: 2px solid var(--rosa); border-radius: 4px; padding: 1px 10px; transform: rotate(-5deg); }
+.util { align-self: flex-start; min-height: 44px; padding: 0 16px; background: none; border: 1.5px solid var(--corte); border-radius: 999px; font-size: 0.9rem; font-weight: 500; }
+.util:hover { border-color: var(--papel-3); }
+.util[aria-pressed="true"] { border-color: var(--lima); color: var(--lima); }
+.tuya { font-size: 0.8rem; font-weight: 600; color: var(--sobre-lima); background: var(--lima); border-radius: 4px; padding: 2px 8px; }
+.boton--chico { min-height: 40px; padding: 0 18px; font-size: 0.92rem; }
+
+/* Sección de opiniones en la página del concierto */
+.opiniones { background: var(--noche-2); }
+.opiniones .centro { padding-block: clamp(48px, 7vw, 72px); }
+.opiniones__cuerpo { margin-top: 32px; display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 32px clamp(28px, 5vw, 60px); align-items: start; }
+.opiniones__lista { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.promedio { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.promedio b { font-family: var(--f-cartel); font-weight: 400; font-size: 6rem; line-height: 1; }
+.subtitulo { margin: 26px 0 12px; font-size: 1rem; font-weight: 600; }
+.barras { display: flex; flex-direction: column; gap: 12px; }
+.barra-fila { display: grid; grid-template-columns: 116px minmax(0, 1fr) 30px; align-items: center; gap: 12px; font-size: 0.94rem; }
+.barra-fila i { display: block; height: 10px; border-radius: 3px; background: var(--corte); overflow: hidden; }
+.barra-fila i b { display: block; height: 100%; background: var(--lima); }
+.barra-fila strong { text-align: right; font-variant-numeric: tabular-nums; }
+.invita { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; padding: 22px 24px; border: 1.5px dashed var(--corte); border-radius: 14px; }
+.invita p { font-size: 1.08rem; font-weight: 600; }
+
+/* Formulario de reseña */
+.calif { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.calif__botones { display: flex; }
+.estrella { width: 50px; height: 50px; padding: 0; background: none; border: 0; color: var(--corte); display: flex; align-items: center; justify-content: center; }
+.estrella svg { width: 40px; height: 40px; }
+.estrella.on { color: var(--lima); }
+.calif__palabra { font-family: var(--f-cartel); font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.03em; min-width: 6em; }
+.aspectos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 4px 32px; }
+.aspecto { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.aspecto__nombre { font-weight: 500; }
+.tramos { display: flex; }
+.tramo { width: 36px; height: 44px; padding: 0 2px; background: none; border: 0; display: flex; align-items: center; }
+.tramo i { display: block; width: 100%; height: 10px; border-radius: 3px; background: var(--corte); }
+.tramo.on i { background: var(--lima); }
+.contador { font-size: 0.82rem; color: var(--papel-2); font-variant-numeric: tabular-nums; }
+.opciones-reporte { display: flex; flex-direction: column; gap: 10px; }
+.opciones-reporte label { display: flex; align-items: center; gap: 10px; min-height: 32px; }
+.opciones-reporte input { width: 20px; height: 20px; accent-color: var(--lima); }
+
+/* Inicio: lo que dicen quienes ya fueron */
+.voces { background: var(--noche-2); }
+.voces .centro { padding-block: clamp(48px, 7vw, 72px); }
+.voces__lista { margin-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 18px; }
+
+@media (min-width: 861px) {
+  .opiniones__cuerpo > div:first-child { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); }
+}
+@media (max-width: 860px) {
+  .opiniones__cuerpo { grid-template-columns: minmax(0, 1fr); }
+}

@@ -20,6 +20,9 @@ export const mesCorto = (iso) => sinPunto(formatear(iso, { month: 'short' }));
 /** "20 nov" */
 export const fechaCorta = (iso) => `${diaDelMes(iso)} ${mesCorto(iso)}`;
 
+/** "20 nov 2026" */
+export const fechaMedia = (iso) => `${fechaCorta(iso)} ${formatear(iso, { year: 'numeric' })}`;
+
 /** "Viernes 20 de noviembre de 2026" */
 export const fechaLarga = (iso) =>
   capitalizar(formatear(iso, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).replace(',', ''));

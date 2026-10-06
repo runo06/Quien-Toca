@@ -6,6 +6,7 @@ import Buscador from '../componentes/inicio/Buscador.jsx';
 import Cartelera from '../componentes/inicio/Cartelera.jsx';
 import FichasFecha from '../componentes/inicio/FichasFecha.jsx';
 import SelectorCiudad from '../componentes/inicio/SelectorCiudad.jsx';
+import VocesDestacadas from '../componentes/inicio/VocesDestacadas.jsx';
 import { guardarCiudad, usarCiudades } from '../contexto/ciudades.jsx';
 import { usarCartelera } from '../hooks/usarCartelera.js';
 import { usarTituloDocumento } from '../hooks/usarTituloDocumento.js';
@@ -26,7 +27,7 @@ export default function PaginaInicio() {
 
   const texto = parametros.get('q') ?? '';
   const fechas = esRangoValido(parametros.get('fechas')) ? parametros.get('fechas') : RANGO_POR_DEFECTO;
-  const orden = parametros.get('orden') === 'precio' ? 'precio' : 'fecha';
+  const orden = ['precio', 'nota'].includes(parametros.get('orden')) ? parametros.get('orden') : 'fecha';
   const { desde, hasta } = rangoDeFechas(fechas);
 
   const ciudad = ciudades.datos?.find((c) => c.slug === slugCiudad);
@@ -99,6 +100,7 @@ export default function PaginaInicio() {
         hayFiltros={Boolean(texto.trim()) || fechas !== RANGO_POR_DEFECTO}
         alQuitarFiltros={quitarFiltros}
       />
+      <VocesDestacadas ciudad={ciudad} />
       <FranjaNoVendemos />
     </>
   );

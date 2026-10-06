@@ -3,7 +3,11 @@
 Hay versiones "breves" para listas (solo lo que dibuja el boleto) y una de
 detalle para la página del concierto.
 """
+from django.db.models import Count, Q
+from django.utils import timezone
 from rest_framework import serializers
+
+from resenas.calificaciones import calificacion_artista, calificacion_recinto
 
 from .models import Artista, Ciudad, Concierto, PrecioZona, Recinto, inicio_de_hoy
 
@@ -53,25 +57,46 @@ class PrecioZonaSerializer(serializers.ModelSerializer):
 class ConciertoListaSerializer(serializers.ModelSerializer):
     artista = ArtistaBreveSerializer()
     recinto = RecintoBreveSerializer()
+    # Nota de las reseñas del artista (anotación de la vista; en el detalle no se usa).
+    promedio_artista = serializers.SerializerMethodField()
+    resenas_artista = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Concierto
         fields = [
             "slug", "titulo", "gira", "fecha_hora", "hora_por_confirmar", "estado",
             "artista", "recinto", "precio_desde", "moneda", "imagen_url", "genero",
+            "promedio_artista", "resenas_artista",
         ]
+
+    def get_promedio_artista(self, concierto):
+        promedio = getattr(concierto, "promedio_artista", None)
+        return round(float(promedio), 1) if promedio is not None else None
+
+
+def se_puede_resenar(concierto):
+    """Ya empezó y no se canceló. (ya_paso, en cambio, cuenta desde el día siguiente.)"""
+    return concierto.fecha_hora <= timezone.now() and concierto.estado != Concierto.Estado.CANCELADO
 
 
 class OtraFechaSerializer(serializers.ModelSerializer):
     recinto = RecintoBreveSerializer()
     ya_paso = serializers.SerializerMethodField()
+    se_puede_resenar = serializers.SerializerMethodField()
+    resenas = serializers.IntegerField(source="n_resenas", read_only=True, default=0)
 
     class Meta:
         model = Concierto
-        fields = ["slug", "fecha_hora", "hora_por_confirmar", "estado", "precio_desde", "moneda", "recinto", "ya_paso"]
+        fields = [
+            "slug", "fecha_hora", "hora_por_confirmar", "estado", "precio_desde", "moneda", "recinto",
+            "ya_paso", "se_puede_resenar", "resenas",
+        ]
 
     def get_ya_paso(self, concierto):
         return concierto.fecha_hora < inicio_de_hoy()
+
+    def get_se_puede_resenar(self, concierto):
+        return se_puede_resenar(concierto)
 
 
 class ConciertoDetalleSerializer(ConciertoListaSerializer):
@@ -79,15 +104,33 @@ class ConciertoDetalleSerializer(ConciertoListaSerializer):
     recinto = RecintoSerializer()
     precios = PrecioZonaSerializer(many=True)
     ya_paso = serializers.SerializerMethodField()
+    se_puede_resenar = serializers.SerializerMethodField()
     otras_fechas = serializers.SerializerMethodField()
+    calificacion_artista = serializers.SerializerMethodField()
+    calificacion_recinto = serializers.SerializerMethodField()
+    # El detalle trae la calificación completa: se quitan los campos breves de la lista.
+    promedio_artista = None
+    resenas_artista = None
 
     class Meta(ConciertoListaSerializer.Meta):
-        fields = ConciertoListaSerializer.Meta.fields + [
-            "invitados", "apertura_puertas", "url_boletos", "precios", "ya_paso", "otras_fechas",
+        fields = [
+            campo for campo in ConciertoListaSerializer.Meta.fields if campo not in ("promedio_artista", "resenas_artista")
+        ] + [
+            "invitados", "apertura_puertas", "url_boletos", "precios", "ya_paso", "se_puede_resenar",
+            "otras_fechas", "calificacion_artista", "calificacion_recinto",
         ]
 
     def get_ya_paso(self, concierto):
         return concierto.fecha_hora < inicio_de_hoy()
+
+    def get_se_puede_resenar(self, concierto):
+        return se_puede_resenar(concierto)
+
+    def get_calificacion_artista(self, concierto):
+        return calificacion_artista(concierto.artista)
+
+    def get_calificacion_recinto(self, concierto):
+        return calificacion_recinto(concierto.recinto)
 
     def get_otras_fechas(self, concierto):
         """Las fechas próximas del mismo artista y las 5 pasadas más recientes, en orden cronológico."""
@@ -97,6 +140,7 @@ class ConciertoDetalleSerializer(ConciertoListaSerializer):
             .exclude(pk=concierto.pk)
             .exclude(estado=Concierto.Estado.CANCELADO)
             .select_related("recinto__ciudad")
+            .annotate(n_resenas=Count("resenas", filter=Q(resenas__oculta=False)))
         )
         futuras = list(otras.filter(fecha_hora__gte=hoy).order_by("fecha_hora"))
         pasadas = list(otras.filter(fecha_hora__lt=hoy).order_by("-fecha_hora")[:5])

@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
 import AvisoDespertando from './componentes/AvisoDespertando.jsx';
+import AvisoFlotante from './componentes/AvisoFlotante.jsx';
 import Encabezado from './componentes/Encabezado.jsx';
 import PiePagina from './componentes/PiePagina.jsx';
 import { ProveedorCiudades } from './contexto/ciudades.jsx';
 import PaginaConcierto from './paginas/PaginaConcierto.jsx';
+import PaginaCuenta from './paginas/PaginaCuenta.jsx';
 import PaginaInicio from './paginas/PaginaInicio.jsx';
 import PaginaNoEncontrada from './paginas/PaginaNoEncontrada.jsx';
 import RedirigirACiudad from './paginas/RedirigirACiudad.jsx';
@@ -44,12 +46,15 @@ export default function App() {
           <Routes>
             <Route path="/" element={<RedirigirACiudad />} />
             <Route path="/concierto/:slug" element={<PaginaConcierto />} />
+            <Route path="/entrar" element={<PaginaCuenta modo="entrar" key="entrar" />} />
+            <Route path="/registro" element={<PaginaCuenta modo="registro" key="registro" />} />
             <Route path="/:ciudad" element={<PaginaInicio />} />
             <Route path="*" element={<PaginaNoEncontrada />} />
           </Routes>
         </main>
         <PiePagina />
         <AvisoDespertando />
+        <AvisoFlotante />
       </ProveedorCiudades>
     </BrowserRouter>
   );

@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 
+from resenas.calificaciones import anotar_calificacion_artista
+
 from .models import Ciudad, Concierto, inicio_de_hoy
 from .serializers import CiudadSerializer, ConciertoDetalleSerializer, ConciertoListaSerializer
 
@@ -38,14 +40,16 @@ def leer_fecha(parametros, nombre):
 
 
 class ConciertosView(generics.ListAPIView):
-    """GET /api/conciertos/?ciudad=cdmx&q=texto&desde=AAAA-MM-DD&hasta=AAAA-MM-DD&orden=fecha|precio&pagina=N"""
+    """GET /api/conciertos/?ciudad=cdmx&q=texto&desde=AAAA-MM-DD&hasta=AAAA-MM-DD&orden=fecha|precio|nota&pagina=N"""
 
     serializer_class = ConciertoListaSerializer
 
     def get_queryset(self):
         parametros = self.request.query_params
         # select_related trae artista, recinto y ciudad en la misma consulta (evita N+1).
-        conciertos = Concierto.objects.proximos().select_related("artista", "recinto__ciudad")
+        conciertos = anotar_calificacion_artista(
+            Concierto.objects.proximos().select_related("artista", "recinto__ciudad")
+        )
 
         if ciudad := parametros.get("ciudad"):
             conciertos = conciertos.filter(recinto__ciudad__slug=ciudad)
@@ -74,6 +78,9 @@ class ConciertosView(generics.ListAPIView):
         if parametros.get("orden") == "precio":
             # Los que no tienen precio van al final.
             return conciertos.order_by(F("precio_desde").asc(nulls_last=True), "fecha_hora", "pk")
+        if parametros.get("orden") == "nota":
+            # Mejor reseñados: por la nota de las fechas pasadas del artista; sin reseñas, al final.
+            return conciertos.order_by(F("promedio_artista").desc(nulls_last=True), "fecha_hora", "pk")
         return conciertos.order_by("fecha_hora", "pk")
 
 

@@ -34,7 +34,6 @@
 .zonas th { text-align: left; font-weight: 400; color: var(--papel-2); padding-block: 7px; }
 .zonas td { text-align: right; font-weight: 600; }
 .zonas tr + tr th, .zonas tr + tr td { border-top: 1px solid var(--corte); }
-.letra-chica { margin-top: 14px; font-size: 0.82rem; color: var(--papel-2); }
 
 /* Otras fechas */
 .fechas { margin-top: clamp(40px, 6vw, 64px); }

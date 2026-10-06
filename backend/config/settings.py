@@ -4,6 +4,8 @@ Todo lo secreto o lo que cambia entre desarrollo y producción sale de
 variables de entorno; nada sensible vive en el código.
 """
 import os
+import sys
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -35,8 +37,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",  # búsqueda sin acentos (unaccent) y campos de lista
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",  # lista de tokens anulados al cerrar sesión
     "corsheaders",
     "conciertos",
+    "cuentas",
+    "resenas",
 ]
 
 MIDDLEWARE = [
@@ -85,6 +90,10 @@ DATABASES = {
     )
 }
 
+# En las pruebas se usa un cifrado rápido de contraseñas (el real tarda a propósito).
+if "test" in sys.argv:
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -118,6 +127,20 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "conciertos.paginacion.Paginacion",
     "PAGE_SIZE": 20,
     "COERCE_DECIMAL_TO_STRING": False,  # precios como números en el JSON, no como texto
+    # La API solo acepta tokens JWT (cabecera Authorization). El panel /admin usa su propia sesión.
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
+    # Freno a quien prueba contraseñas o crea cuentas en masa (por IP).
+    "DEFAULT_THROTTLE_RATES": {"cuentas": "10/min"},
+}
+
+# JWT: el token de acceso dura poco; el de renovación se cambia por uno nuevo en
+# cada uso y el viejo queda anulado (si alguien lo roba, deja de servir pronto).
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
 }
 
 # Orígenes (dominios) del frontend que pueden llamar a la API desde el navegador.

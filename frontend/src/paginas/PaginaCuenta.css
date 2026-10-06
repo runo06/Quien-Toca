@@ -1,0 +1,5 @@
+.cuenta { padding-block: clamp(32px, 7vw, 80px); }
+.cuenta__caja { max-width: 480px; margin-inline: auto; }
+.cuenta__caja h1 { font-size: clamp(2rem, 5vw, 2.6rem); }
+.cuenta__caja h1:focus { outline: none; }
+.entrada[aria-invalid="true"] { border-color: var(--alerta); }

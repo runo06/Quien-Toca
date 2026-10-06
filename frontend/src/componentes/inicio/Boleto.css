@@ -21,6 +21,7 @@
 .boleto__info h3 a:hover { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; }
 .boleto__info p { overflow-wrap: anywhere; }
 .nota { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 6px; font-size: 0.9rem; }
+.nota svg { width: 16px; height: 16px; color: var(--lima); flex: none; }
 
 .boleto__accion { grid-area: accion; display: flex; align-items: center; gap: 22px; padding: 18px 24px 18px 0; }
 .precio span { display: block; font-size: 0.82rem; color: var(--papel-2); }
