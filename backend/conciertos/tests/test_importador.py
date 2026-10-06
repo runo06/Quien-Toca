@@ -25,13 +25,14 @@ class ImportacionTests(TestCase):
 
     def test_primera_importacion_crea_y_descarta(self):
         resumen = importar(self.eventos)
-        self.assertEqual(resumen.creados, 3)
+        self.assertEqual(resumen.creados, 4)
         self.assertEqual(resumen.actualizados, 0)
-        self.assertEqual(dict(resumen.descartados), {"complemento": 1, "fuera_de_ciudades": 1, "sin_artista": 1})
+        self.assertEqual(dict(resumen.descartados), {"complemento": 1, "fuera_de_ciudades": 1})
         self.assertEqual(resumen.errores, [])
-        self.assertEqual(Concierto.objects.count(), 3)
-        self.assertEqual(Recinto.objects.count(), 3)
-        self.assertEqual(Artista.objects.count(), 4)  # Cometas, Marea Roja (invitada), Valentina, Niebla
+        self.assertEqual(Concierto.objects.count(), 4)
+        self.assertEqual(Recinto.objects.count(), 4)
+        # Cometas, Marea Roja (invitada), Valentina, Niebla y Noche de Tributos (del título)
+        self.assertEqual(Artista.objects.count(), 5)
 
     def test_marca_el_origen_ticketmaster(self):
         importar(self.eventos)
@@ -51,10 +52,10 @@ class ImportacionTests(TestCase):
         importar(self.eventos)
         resumen = importar(cargar_eventos())
         self.assertEqual(resumen.creados, 0)
-        self.assertEqual(resumen.sin_cambios, 3)
-        self.assertEqual(Concierto.objects.count(), 3)
-        self.assertEqual(Recinto.objects.count(), 3)
-        self.assertEqual(Artista.objects.count(), 4)
+        self.assertEqual(resumen.sin_cambios, 4)
+        self.assertEqual(Concierto.objects.count(), 4)
+        self.assertEqual(Recinto.objects.count(), 4)
+        self.assertEqual(Artista.objects.count(), 5)
 
     def test_actualiza_lo_que_cambio_sin_cambiar_el_slug(self):
         importar(self.eventos)
@@ -63,7 +64,7 @@ class ImportacionTests(TestCase):
         eventos[0]["dates"]["status"]["code"] = "rescheduled"
         resumen = importar(eventos)
         self.assertEqual(resumen.actualizados, 1)
-        self.assertEqual(resumen.sin_cambios, 2)
+        self.assertEqual(resumen.sin_cambios, 3)
         concierto = Concierto.objects.get(id_ticketmaster="TM-COMETAS-CDMX")
         self.assertEqual(concierto.fecha_hora, datetime(2026, 11, 22, 3, tzinfo=tz.utc))
         self.assertEqual(concierto.estado, Concierto.Estado.REPROGRAMADO)
@@ -130,7 +131,7 @@ class ImportacionTests(TestCase):
     def test_un_evento_con_error_no_detiene_a_los_demas(self):
         self.eventos[0]["url"] = "https://www.ticketmaster.com.mx/" + "a" * 600  # más largo que la columna
         resumen = importar(self.eventos)
-        self.assertEqual(resumen.creados, 2)
+        self.assertEqual(resumen.creados, 3)
         self.assertEqual(len(resumen.errores), 1)
         self.assertIn("TM-COMETAS-CDMX", resumen.errores[0])
         self.assertFalse(Concierto.objects.filter(id_ticketmaster="TM-COMETAS-CDMX").exists())
@@ -213,6 +214,67 @@ class ComandoImportarTests(TestCase):
 
         texto = salida.getvalue()
         self.assertIn("Eventos recibidos: 6 (12 llamadas a la API)", texto)
-        self.assertIn("Creados: 3", texto)
+        self.assertIn("Creados: 4", texto)
         self.assertIn("Complementos (VIP, estacionamiento, meet & greet): 1", texto)
         cliente.eventos_por_meses.assert_called_once_with(12, countryCode="MX", classificationName="music")
+
+
+class AtraccionQueEsElRecintoImportacionTests(TestCase):
+    """Bellas Artes da de alta su sala como "artista" para toda su programación."""
+
+    def funcion(self, id_evento, nombre, dia):
+        evento = cargar_eventos()[0]  # en el Auditorio Nacional
+        evento["id"] = id_evento
+        evento["name"] = nombre
+        evento["_embedded"]["attractions"] = [{"name": "Sala Principal Auditorio Nacional", "id": "TM-A-SALA"}]
+        evento["dates"]["start"]["dateTime"] = f"2026-11-{dia}T02:00:00Z"
+        return evento
+
+    def test_cada_obra_es_su_propio_artista_sin_duplicarse(self):
+        eventos = [
+            self.funcion("TM-TOSCA-1", "Comp. Nal. Ópera Tosca de Giacomo Puccini, 10+. Ingreso 19:30 h.", 21),
+            self.funcion("TM-TOSCA-2", "Comp. Nal. Ópera Tosca de Giacomo Puccini, 10+. Ingreso 16:30 h", 23),
+            self.funcion("TM-ORQUESTA", "Orquesta Sinfónica de Yucatán, CNMO. 8+. Ingreso 18:30 h.", 25),
+        ]
+        importar(eventos)
+        resumen = importar(eventos)  # otra noche: nada nuevo
+        self.assertEqual(resumen.sin_cambios, 3)
+        self.assertEqual(
+            sorted(Artista.objects.values_list("nombre", flat=True)),
+            ["Comp. Nal. Ópera Tosca de Giacomo Puccini", "Orquesta Sinfónica de Yucatán, CNMO"],
+        )
+        self.assertFalse(Artista.objects.filter(nombre__icontains="Sala Principal").exists())
+        tosca = Artista.objects.get(nombre__startswith="Comp. Nal.")
+        self.assertIsNone(tosca.id_ticketmaster)
+        self.assertEqual(tosca.conciertos.count(), 2)
+
+    def test_corrige_conciertos_importados_con_el_recinto_como_artista(self):
+        importar([self.funcion("TM-TOSCA-1", "Comp. Nal. Ópera Tosca de Giacomo Puccini, 10+. Ingreso 19:30 h.", 21)])
+        # Así quedaron antes del arreglo: el artista era la sala.
+        sala = Artista.objects.create(nombre="Sala Principal Auditorio Nacional", id_ticketmaster="TM-A-SALA")
+        Concierto.objects.update(artista=sala)
+        resumen = importar([self.funcion("TM-TOSCA-1", "Comp. Nal. Ópera Tosca de Giacomo Puccini, 10+. Ingreso 19:30 h.", 21)])
+        self.assertEqual(resumen.actualizados, 1)
+        self.assertEqual(Concierto.objects.get().artista.nombre, "Comp. Nal. Ópera Tosca de Giacomo Puccini")
+        self.assertFalse(Artista.objects.filter(pk=sala.pk).exists())  # ya sin conciertos, se borra
+
+    def test_respeta_el_artista_corregido_a_mano(self):
+        evento = self.funcion("TM-JEANETTE", "Jeanette Gira 50 Aniversario", 21)
+        importar([evento])
+        # En el panel se cambia el artista que salió del título por el correcto.
+        jeanette = Artista.objects.create(nombre="Jeanette")
+        Concierto.objects.update(artista=jeanette)
+        resumen = importar([evento])
+        self.assertEqual(resumen.sin_cambios, 1)
+        self.assertEqual(Concierto.objects.get().artista, jeanette)
+
+    def test_no_borra_al_recinto_como_artista_si_aun_tiene_conciertos(self):
+        # Un concierto pasado que Ticketmaster ya no manda sigue apuntando a la sala.
+        sala = Artista.objects.create(nombre="Sala Principal Auditorio Nacional", id_ticketmaster="TM-A-SALA")
+        recinto = Recinto.objects.create(nombre="Auditorio Nacional", ciudad=Ciudad.objects.get(slug="cdmx"))
+        Concierto.objects.create(
+            titulo="Función pasada", artista=sala, recinto=recinto, url_boletos="https://x.mx",
+            fecha_hora=timezone.now() - timedelta(days=30),
+        )
+        importar([self.funcion("TM-TOSCA-1", "Comp. Nal. Ópera Tosca de Giacomo Puccini, 10+. Ingreso 19:30 h.", 21)])
+        self.assertTrue(Artista.objects.filter(pk=sala.pk).exists())

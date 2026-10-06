@@ -148,4 +148,6 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {"consola": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["consola"], "level": "WARNING"},
+    # Los 4xx (404, 400) son normales; solo interesan los errores del servidor.
+    "loggers": {"django.request": {"handlers": ["consola"], "level": "ERROR", "propagate": False}},
 }

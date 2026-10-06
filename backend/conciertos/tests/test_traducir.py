@@ -7,8 +7,11 @@ from django.test import SimpleTestCase
 
 from conciertos.importacion.traducir import (
     Descartado,
+    artista_desde_titulo,
     ciudad_mas_cercana,
     elegir_imagen,
+    es_el_recinto,
+    limpiar_titulo,
     traducir_evento,
     traducir_genero,
 )
@@ -67,7 +70,7 @@ class TraducirEventoTests(SimpleTestCase):
         self.assertEqual(datos.genero, "Electrónica")
 
     def test_descartes(self):
-        for indice, motivo in [(3, "complemento"), (4, "fuera_de_ciudades"), (5, "sin_artista")]:
+        for indice, motivo in [(3, "complemento"), (4, "fuera_de_ciudades")]:
             with self.subTest(motivo=motivo):
                 with self.assertRaises(Descartado) as contexto:
                     traducir_evento(self.eventos[indice], CIUDADES)
@@ -127,3 +130,72 @@ class FuncionesAuxiliaresTests(SimpleTestCase):
     def test_sin_imagenes_utiles(self):
         self.assertEqual(elegir_imagen(None), "")
         self.assertEqual(elegir_imagen([{"url": "https://x/f.jpg", "fallback": True}]), "")
+
+
+def con_atraccion_del_recinto(evento, nombre, quedan_artistas=False):
+    """Como llegan los eventos de Bellas Artes: la "atracción" es la sala del recinto."""
+    sala = {"name": "Sala Principal Auditorio Nacional", "id": "TM-A-SALA", "classifications": [{"genre": {"name": "World"}}]}
+    reales = evento["_embedded"]["attractions"] if quedan_artistas else []
+    evento["_embedded"]["attractions"] = [sala, *reales]
+    evento["name"] = nombre
+    return evento
+
+
+class AtraccionQueEsElRecintoTests(SimpleTestCase):
+    def setUp(self):
+        self.evento = cargar_eventos()[0]  # en el Auditorio Nacional
+
+    def test_reconoce_al_recinto_disfrazado_de_artista(self):
+        self.assertTrue(es_el_recinto("Sala Principal Bellas Artes", "Palacio de Bellas Artes"))
+        self.assertTrue(es_el_recinto("Auditorio Nacional", "Auditorio Nacional"))
+        # Bandas que no son el recinto, aunque su nombre suene a lugar o coincida en parte.
+        self.assertFalse(es_el_recinto("Two Door Cinema Club", "Escenario GNP Seguros"))
+        self.assertFalse(es_el_recinto("Los Ángeles Azules", "Teatro Metropólitan"))
+        self.assertFalse(es_el_recinto("Bellas Artes", "Palacio de Bellas Artes Sala Manuel M. Ponce"))
+
+    def test_solo_el_recinto_el_artista_sale_del_titulo(self):
+        evento = con_atraccion_del_recinto(self.evento, "Comp. Nal. Ópera Tosca de Giacomo Puccini, 10+. Ingreso 19:30 h.")
+        datos = traducir_evento(evento, CIUDADES)
+        self.assertEqual(datos.artista.nombre, "Comp. Nal. Ópera Tosca de Giacomo Puccini")
+        self.assertIsNone(datos.artista.id_ticketmaster)
+        self.assertEqual(datos.titulo, "Comp. Nal. Ópera Tosca de Giacomo Puccini")
+        self.assertEqual(datos.invitados, [])
+
+    def test_si_hay_artistas_reales_se_ignora_el_recinto(self):
+        evento = con_atraccion_del_recinto(self.evento, "Los Cometas del Sur en concierto", quedan_artistas=True)
+        datos = traducir_evento(evento, CIUDADES)
+        self.assertEqual(datos.artista.nombre, "Los Cometas del Sur")
+        self.assertEqual([a.nombre for a in datos.invitados], ["Marea Roja"])
+        self.assertEqual(datos.titulo, "Los Cometas del Sur en concierto")
+
+    def test_sin_atracciones_el_artista_sale_del_titulo(self):
+        datos = traducir_evento(cargar_eventos()[5], CIUDADES)
+        self.assertEqual(datos.artista.nombre, "Noche de Tributos")
+        self.assertIsNone(datos.artista.id_ticketmaster)
+        self.assertEqual(datos.titulo, "Noche de Tributos")
+
+    def test_artista_desde_titulo_quita_la_gira_y_la_ciudad(self):
+        monterrey = CIUDADES[2]
+        for titulo, artista in [
+            ("Akriila - El Tour de Lucy", "Akriila"),
+            ("Adanowsky en Monterrey", "Adanowsky"),
+            ("Fernando Delgadillo y Alejandro Filio", "Fernando Delgadillo y Alejandro Filio"),
+            ("Blink-182", "Blink-182"),
+        ]:
+            with self.subTest(titulo=titulo):
+                self.assertEqual(artista_desde_titulo(titulo, monterrey).nombre, artista)
+
+    def test_descarta_eventos_de_prueba(self):
+        for nombre in ["Evento Demo Platinum HSBC", "EVENTO PRUEBA"]:
+            evento = cargar_eventos()[5]
+            evento["name"] = nombre
+            with self.subTest(nombre=nombre):
+                with self.assertRaises(Descartado) as contexto:
+                    traducir_evento(evento, CIUDADES)
+                self.assertEqual(contexto.exception.motivo, "prueba")
+
+    def test_limpiar_titulo(self):
+        self.assertEqual(limpiar_titulo("Orquesta Sinfónica de Yucatán, CNMO. 8+. Ingreso 18:30 h."), "Orquesta Sinfónica de Yucatán, CNMO")
+        self.assertEqual(limpiar_titulo("Compañía Nacional de Danza Gala Balanchine, 6+. Ingreso 16:30 h"), "Compañía Nacional de Danza Gala Balanchine")
+        self.assertEqual(limpiar_titulo("Blink-182"), "Blink-182")
+        self.assertEqual(limpiar_titulo("Sum 41"), "Sum 41")

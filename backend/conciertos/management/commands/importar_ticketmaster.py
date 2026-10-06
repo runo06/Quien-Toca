@@ -7,6 +7,7 @@ from conciertos.models import Ciudad
 
 MOTIVOS = {
     "complemento": "Complementos (VIP, estacionamiento, meet & greet)",
+    "prueba": "Eventos de prueba de Ticketmaster",
     "fuera_de_ciudades": "Fuera de nuestras ciudades",
     "sin_artista": "Sin artista",
     "sin_recinto": "Sin recinto",

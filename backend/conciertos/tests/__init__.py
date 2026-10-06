@@ -10,6 +10,6 @@ def cargar_eventos():
     """Una copia nueva de los eventos de ejemplo: cada prueba puede modificarla sin afectar a otras.
 
     Orden: 0 CDMX completo, 1 Zapopan sin hora, 2 Monterrey cancelado con precio,
-    3 complemento VIP, 4 Mérida (fuera), 5 sin artista.
+    3 complemento VIP, 4 Mérida (fuera), 5 sin atracciones (el artista sale del título).
     """
     return copy.deepcopy(_EVENTOS)

@@ -5,6 +5,7 @@ ciudades, y devuelve un DatosConcierto o lanza Descartado con el motivo.
 """
 import math
 import re
+import unicodedata
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time
 from decimal import Decimal
@@ -22,6 +23,8 @@ PATRON_COMPLEMENTO = re.compile(
     r"|boleto de evento no incluido|no da acceso|sin boleto",
     re.IGNORECASE,
 )
+# Eventos de prueba que Ticketmaster deja publicados ("Evento Demo Platinum HSBC", "EVENTO PRUEBA").
+PATRON_PRUEBA = re.compile(r"\bevento\s+(demo|prueba)\b", re.IGNORECASE)
 # Los abonos y boletos "Individual" sí son el boleto de un festival, pero vienen
 # repetidos por tipo (General, Comfort Pass, Banamex Plus): se agrupan en un solo concierto.
 PATRON_ABONO = re.compile(r"^\s*(abono|individual)\b", re.IGNORECASE)
@@ -58,6 +61,17 @@ GENEROS = {
 }
 GENEROS_SIN_DATO = {"Undefined", "Other"}
 
+# Algunos recintos se dan de alta como "artista" para todo su programa: en Bellas Artes,
+# la ópera, la danza y las orquestas llegan con la atracción "Sala Principal Bellas Artes".
+# Para comparar nombres se ignoran estas palabras genéricas.
+PALABRAS_DE_LUGAR = {
+    "sala", "principal", "teatro", "auditorio", "foro", "palacio", "recinto", "escenario",
+    "arena", "estadio", "explanada", "salon", "centro", "plaza",
+}
+CONECTORES = {"de", "del", "la", "el", "los", "las", "y"}
+# Lo que sobra al final de esos títulos: ", 10+. Ingreso 19:30 h."
+PATRON_COLA_DEL_TITULO = re.compile(r"(,?\s*\d{1,2}\s*\+|\.?\s*ingreso\s+\d).*$", re.IGNORECASE)
+
 
 class Descartado(Exception):
     def __init__(self, motivo):
@@ -67,7 +81,7 @@ class Descartado(Exception):
 
 @dataclass(frozen=True)
 class DatosArtista:
-    id_ticketmaster: str
+    id_ticketmaster: str | None  # None si salió del título del evento
     nombre: str
     genero: str
     imagen_url: str
@@ -98,6 +112,8 @@ class DatosConcierto:
     recinto: DatosRecinto
     artista: DatosArtista
     invitados: list = field(default_factory=list)
+    # Ids de "atracciones" que en realidad eran el recinto: el importador limpia esos artistas.
+    ids_recinto_como_artista: list = field(default_factory=list)
 
 
 def distancia_km(a, b):
@@ -153,6 +169,42 @@ def leer_precio(rangos):
     return min(minimos) if minimos else (None, "MXN")
 
 
+def palabras(texto):
+    """Las palabras del texto en minúsculas y sin acentos."""
+    sin_acentos = unicodedata.normalize("NFKD", texto.lower()).encode("ascii", "ignore").decode()
+    return set(re.findall(r"[a-z0-9]+", sin_acentos))
+
+
+def es_el_recinto(nombre_atraccion, nombre_recinto):
+    """¿La "atracción" es en realidad el recinto? ("Sala Principal Bellas Artes" en "Palacio de Bellas Artes")."""
+    atraccion, recinto = palabras(nombre_atraccion), palabras(nombre_recinto)
+    if atraccion == recinto:
+        return True
+    distintivas = recinto - PALABRAS_DE_LUGAR - CONECTORES
+    # Debe sonar a lugar ("sala", "teatro"...): así una banda como "Two Door Cinema Club" no cae.
+    return (
+        bool(distintivas)
+        and bool(atraccion & PALABRAS_DE_LUGAR)
+        and atraccion - PALABRAS_DE_LUGAR - CONECTORES == distintivas
+    )
+
+
+def limpiar_titulo(titulo):
+    """Quita la edad mínima y la hora de ingreso del final del título."""
+    return PATRON_COLA_DEL_TITULO.sub("", titulo).strip(" .,") or titulo
+
+
+def artista_desde_titulo(titulo, ciudad):
+    """Cuando Ticketmaster no dice quién toca, el título suele decirlo.
+
+    "Akriila - El Tour de Lucy" -> "Akriila"; "Adanowsky en Monterrey" -> "Adanowsky".
+    Sin id de Ticketmaster: el importador lo busca por nombre.
+    """
+    nombre = re.split(r"\s+[-–|]\s+", titulo)[0]
+    nombre = re.sub(rf"\s+en\s+{re.escape(ciudad.nombre)}$", "", nombre, flags=re.IGNORECASE).strip()
+    return DatosArtista(id_ticketmaster=None, nombre=(nombre or titulo)[:200], genero="", imagen_url="")
+
+
 def traducir_artista(atraccion):
     return DatosArtista(
         id_ticketmaster=atraccion["id"],
@@ -166,6 +218,8 @@ def traducir_evento(evento, ciudades):
     nombre = (evento.get("name") or "").strip()
     if PATRON_COMPLEMENTO.search(nombre):
         raise Descartado("complemento")
+    if PATRON_PRUEBA.search(nombre):
+        raise Descartado("prueba")
     if not evento.get("url"):
         raise Descartado("sin_enlace")
 
@@ -183,9 +237,17 @@ def traducir_evento(evento, ciudades):
     if ciudad is None:
         raise Descartado("fuera_de_ciudades")
 
-    artistas = [traducir_artista(a) for a in incrustado.get("attractions") or [] if a.get("id") and a.get("name")]
+    atracciones = [a for a in incrustado.get("attractions") or [] if a.get("id") and a.get("name")]
+    nombre_recinto = recinto.get("name") or ""
+    ids_recinto = [a["id"] for a in atracciones if es_el_recinto(a["name"], nombre_recinto)]
+    artistas = [traducir_artista(a) for a in atracciones if a["id"] not in ids_recinto]
     if not artistas:
-        raise Descartado("sin_artista")
+        # Sin atracciones, o solo el recinto: quién toca está en el título
+        # ("Orquesta Sinfónica de Yucatán, CNMO. 8+. Ingreso 18:30 h.").
+        nombre = limpiar_titulo(nombre)
+        if not nombre:
+            raise Descartado("sin_artista")
+        artistas = [artista_desde_titulo(nombre, ciudad)]
 
     fecha_hora, hora_por_confirmar = leer_fecha(evento.get("dates") or {})
     precio, moneda = leer_precio(evento.get("priceRanges"))
@@ -212,13 +274,15 @@ def traducir_evento(evento, ciudades):
         ),
         artista=artistas[0],
         invitados=artistas[1:],
+        ids_recinto_como_artista=ids_recinto,
     )
 
 
 def clave_de_grupo(datos):
     """Mismo artista, mismo recinto y mismo día local = el mismo concierto."""
     dia_local = datos.fecha_hora.astimezone(ZoneInfo(ZONA_PREDETERMINADA)).date()
-    return (datos.artista.id_ticketmaster, datos.recinto.id_ticketmaster, dia_local)
+    artista = datos.artista.id_ticketmaster or datos.artista.nombre.lower()
+    return (artista, datos.recinto.id_ticketmaster, dia_local)
 
 
 def agrupar(lista_datos):

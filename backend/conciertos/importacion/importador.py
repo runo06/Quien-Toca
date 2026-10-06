@@ -58,12 +58,21 @@ class Importador:
                 continue
             setattr(self.resumen, resultado, getattr(self.resumen, resultado) + 1)
             self.resumen.agrupados += len(grupo) - 1
+
+        # 3. Los recintos que se habían guardado como artista, ya sin conciertos, sobran.
+        ids_recinto = {i for datos in traducidos for i in datos.ids_recinto_como_artista}
+        Artista.objects.filter(
+            id_ticketmaster__in=ids_recinto, conciertos__isnull=True, participaciones__isnull=True
+        ).delete()
         return self.resumen
 
     def _artista(self, datos):
-        artista = Artista.objects.filter(id_ticketmaster=datos.id_ticketmaster).first()
+        artista = None
+        if datos.id_ticketmaster:
+            artista = Artista.objects.filter(id_ticketmaster=datos.id_ticketmaster).first()
         if artista is None:
-            # Si ya se capturó a mano con el mismo nombre, se vincula en vez de duplicarlo.
+            # Nuevo, o sin id porque salió del título: si ya existe uno sin id con el
+            # mismo nombre (capturado a mano o de otra noche), se reusa en vez de duplicarlo.
             artista = Artista.objects.filter(id_ticketmaster__isnull=True, nombre__iexact=datos.nombre).first()
         artista = artista or Artista()
         artista.id_ticketmaster = datos.id_ticketmaster
@@ -97,7 +106,20 @@ class Importador:
         ids son todos los eventos del grupo: el concierto se busca por cualquiera
         de ellos, así no se duplica si otra noche manda un evento distinto del grupo.
         """
-        artista = self._artista(datos.artista)
+        # __overlap: "la lista guardada comparte al menos un id con esta lista".
+        concierto = (
+            Concierto.objects.filter(Q(id_ticketmaster__in=ids) | Q(ids_agrupados__overlap=ids)).order_by("pk").first()
+        )
+        if (
+            concierto is not None
+            and datos.artista.id_ticketmaster is None
+            and concierto.artista.id_ticketmaster not in datos.ids_recinto_como_artista
+        ):
+            # El artista salió del título: se respeta el que ya tiene, por si lo corregiste
+            # a mano ("Jeanette Gira 50 Aniversario" -> "Jeanette"). Salvo que sea el recinto.
+            artista = concierto.artista
+        else:
+            artista = self._artista(datos.artista)
         invitados = [self._artista(a) for a in datos.invitados]
         valores = {
             "titulo": datos.titulo,
@@ -114,10 +136,6 @@ class Importador:
             # Solo si Ticketmaster trae precio; si no, se respeta el capturado a mano.
             valores.update(precio_desde=datos.precio_desde, moneda=datos.moneda)
 
-        # __overlap: "la lista guardada comparte al menos un id con esta lista".
-        concierto = (
-            Concierto.objects.filter(Q(id_ticketmaster__in=ids) | Q(ids_agrupados__overlap=ids)).order_by("pk").first()
-        )
         if concierto is None:
             concierto = Concierto.objects.create(
                 id_ticketmaster=datos.id_ticketmaster,
