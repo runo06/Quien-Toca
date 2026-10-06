@@ -32,9 +32,10 @@ export default function OtrasFechas({ concierto }) {
           if (fecha.ya_paso) {
             return (
               <li key={fecha.slug}>
-                <span className="parada parada--pasada">
+                {/* Se puede abrir para leer (o escribir) las reseñas de esa noche. */}
+                <Link className="parada parada--pasada" to={`/concierto/${fecha.slug}`} state={ubicacion.state}>
                   {dia}<span>{ciudad}<span>Ya pasó{fecha.resenas ? `, ${plural(fecha.resenas, 'reseña', 'reseñas')}` : ''}</span></span>
-                </span>
+                </Link>
               </li>
             );
           }
