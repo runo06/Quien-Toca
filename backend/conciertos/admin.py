@@ -1,5 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
+from .importacion.descripciones import actualizar_descripcion
+from .importacion.wikipedia import ErrorWikipedia, Wikipedia
 from .models import Artista, Ciudad, Concierto, PrecioZona, Recinto
 
 admin.site.site_header = "¿Quién toca? · Administración"
@@ -22,9 +24,46 @@ class RecintoAdmin(admin.ModelAdmin):
 
 @admin.register(Artista)
 class ArtistaAdmin(admin.ModelAdmin):
-    list_display = ["nombre", "genero", "id_ticketmaster"]
+    list_display = ["nombre", "genero", "tiene_descripcion", "id_ticketmaster"]
+    list_filter = ["descripcion_fija", ("descripcion", admin.EmptyFieldListFilter)]
     search_fields = ["nombre"]
-    readonly_fields = ["id_ticketmaster"]
+    readonly_fields = ["id_ticketmaster", "descripcion_fuente", "descripcion_revisada"]
+    fieldsets = [
+        (None, {"fields": ["nombre", "slug", "genero", "imagen_url", "id_ticketmaster"]}),
+        ("Descripción", {"fields": ["descripcion", "wikipedia", "descripcion_fija", "descripcion_fuente", "descripcion_revisada"]}),
+        ("Enlaces", {"fields": ["enlaces"], "description": "Los manda Ticketmaster; puedes agregar o corregir."}),
+    ]
+    actions = ["buscar_descripcion"]
+
+    @admin.display(description="descripción", boolean=True)
+    def tiene_descripcion(self, artista):
+        return bool(artista.descripcion)
+
+    def save_model(self, request, artista, form, change):
+        if "descripcion" in form.changed_data and "wikipedia" not in form.changed_data:
+            # La escribiste tú: que la búsqueda automática no la cambie.
+            artista.descripcion_fija = True
+            artista.descripcion_fuente = ""
+        super().save_model(request, artista, form, change)
+        if "wikipedia" in form.changed_data and not artista.descripcion_fija:
+            self.buscar_descripcion(request, Artista.objects.filter(pk=artista.pk))
+
+    @admin.action(description="Buscar su descripción en Wikipedia ahora")
+    def buscar_descripcion(self, request, queryset):
+        wikipedia = Wikipedia()
+        for artista in queryset:
+            try:
+                encontrada = actualizar_descripcion(artista, wikipedia)
+            except ErrorWikipedia as error:
+                self.message_user(request, f"{artista}: no se pudo consultar Wikipedia ({error}).", messages.ERROR)
+                continue
+            if encontrada:
+                self.message_user(request, f"{artista}: descripción actualizada.", messages.SUCCESS)
+            else:
+                self.message_user(
+                    request, f"{artista}: no hay un artículo confiable. Pega el correcto en «artículo de Wikipedia».",
+                    messages.WARNING,
+                )
 
 
 class PrecioZonaInline(admin.TabularInline):

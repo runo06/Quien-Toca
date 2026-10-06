@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { fechaLarga, hora, horaSimple } from '../../utilidades/fechas.js';
 import { listaConY, subtituloDe } from '../../utilidades/texto.js';
 import Cartel from '../cartel/Cartel.jsx';
@@ -21,10 +22,13 @@ export default function CabezaConcierto({ concierto }) {
         {invitados.length > 0 && (
           <p className="invitados apagado">Con {listaConY(invitados.map((i) => i.nombre))}</p>
         )}
+        <p style={{ marginTop: 10 }}>
+          <Link className="enlace" to={`/artista/${artista.slug}`}>Ver todo sobre {artista.nombre}</Link>
+        </p>
         <dl className="datos">
           <div>
             <dt>Recinto</dt>
-            <dd>{recinto.nombre}, {recinto.ciudad.nombre}</dd>
+            <dd><Link to={`/recinto/${recinto.slug}`}>{recinto.nombre}</Link>, {recinto.ciudad.nombre}</dd>
           </div>
           {recinto.direccion && (
             <div>

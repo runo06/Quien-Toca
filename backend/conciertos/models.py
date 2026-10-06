@@ -75,6 +75,22 @@ class Artista(models.Model):
     genero = models.CharField("género", max_length=60, blank=True)
     imagen_url = models.URLField("imagen (URL)", max_length=500, blank=True)
     id_ticketmaster = models.CharField("id de Ticketmaster", max_length=64, unique=True, null=True, blank=True)
+    # Redes y páginas que manda Ticketmaster: {"instagram": "https://...", "spotify": "...", "musicbrainz": "..."}
+    enlaces = models.JSONField(default=dict, blank=True)
+    descripcion = models.TextField("descripción", blank=True)
+    descripcion_fuente = models.URLField(
+        "fuente de la descripción", max_length=500, blank=True,
+        help_text="El artículo de Wikipedia de donde salió. Vacío si la escribiste tú.",
+    )
+    wikipedia = models.URLField(
+        "artículo de Wikipedia", max_length=500, blank=True,
+        help_text="Si la descripción automática es de otra persona (o no hay), pega aquí el artículo correcto.",
+    )
+    descripcion_fija = models.BooleanField(
+        "no actualizar la descripción", default=False,
+        help_text="Márcalo si escribiste la descripción a mano: así la búsqueda automática no la cambia.",
+    )
+    descripcion_revisada = models.DateTimeField("descripción buscada", null=True, blank=True)
 
     class Meta:
         ordering = ["nombre"]

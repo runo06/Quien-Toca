@@ -81,6 +81,9 @@ class Importador:
             artista.genero = datos.genero
         if datos.imagen_url:
             artista.imagen_url = datos.imagen_url
+        if datos.enlaces:
+            # Se agregan a los que ya tenía: un enlace puesto a mano en el panel no se pierde.
+            artista.enlaces = {**artista.enlaces, **datos.enlaces}
         artista.save()
         return artista
 

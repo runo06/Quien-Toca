@@ -16,7 +16,7 @@ concurrency:
 jobs:
   importar:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       # Secretos del repositorio: Settings > Secrets and variables > Actions.
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -36,6 +36,9 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Importar
         run: python manage.py importar_ticketmaster
+      - name: Descripciones de artistas nuevos (Wikipedia)
+        # Máximo 150 por noche; MusicBrainz pide ir despacio (una consulta por segundo).
+        run: python manage.py actualizar_descripciones
       - name: Borrar sesiones caducadas
         # Los tokens JWT vencidos de la lista de anulados ya no sirven para nada.
         run: python manage.py flushexpiredtokens

@@ -61,6 +61,10 @@ GENEROS = {
 }
 GENEROS_SIN_DATO = {"Undefined", "Other"}
 
+# Enlaces del artista que se guardan (Ticketmaster también manda iTunes, Last.fm...).
+# wiki y musicbrainz sirven para encontrar su descripción en Wikipedia.
+TIPOS_DE_ENLACE = {"homepage", "instagram", "spotify", "youtube", "tiktok", "facebook", "twitter", "wiki", "musicbrainz"}
+
 # Algunos recintos se dan de alta como "artista" para todo su programa: en Bellas Artes,
 # la ópera, la danza y las orquestas llegan con la atracción "Sala Principal Bellas Artes".
 # Para comparar nombres se ignoran estas palabras genéricas.
@@ -85,6 +89,7 @@ class DatosArtista:
     nombre: str
     genero: str
     imagen_url: str
+    enlaces: dict = field(default_factory=dict, hash=False)
 
 
 @dataclass(frozen=True)
@@ -205,12 +210,23 @@ def artista_desde_titulo(titulo, ciudad):
     return DatosArtista(id_ticketmaster=None, nombre=(nombre or titulo)[:200], genero="", imagen_url="")
 
 
+def leer_enlaces(atraccion):
+    """{"instagram": url, ...}: el primer enlace de cada tipo que nos sirve."""
+    enlaces = {}
+    for tipo, lista in (atraccion.get("externalLinks") or {}).items():
+        url = next((e.get("url") for e in lista or [] if e.get("url")), None)
+        if tipo in TIPOS_DE_ENLACE and url and url.startswith(("http://", "https://")):
+            enlaces[tipo] = url
+    return enlaces
+
+
 def traducir_artista(atraccion):
     return DatosArtista(
         id_ticketmaster=atraccion["id"],
         nombre=atraccion["name"].strip(),
         genero=traducir_genero(atraccion.get("classifications")),
         imagen_url=elegir_imagen(atraccion.get("images")),
+        enlaces=leer_enlaces(atraccion),
     )
 
 

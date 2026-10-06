@@ -7,8 +7,15 @@ from rest_framework.exceptions import ValidationError
 
 from resenas.calificaciones import anotar_calificacion_artista
 
-from .models import Ciudad, Concierto, inicio_de_hoy
-from .serializers import CiudadSerializer, ConciertoDetalleSerializer, ConciertoListaSerializer
+from .models import Artista, Ciudad, Concierto, Recinto, inicio_de_hoy
+from .serializers import (
+    ArtistaDetalleSerializer,
+    CiudadSerializer,
+    ConciertoDetalleSerializer,
+    ConciertoListaSerializer,
+    RecintoDetalleSerializer,
+    RecintoEnListaSerializer,
+)
 
 
 def salud(request):
@@ -90,3 +97,41 @@ class ConciertoDetalleView(generics.RetrieveAPIView):
     serializer_class = ConciertoDetalleSerializer
     lookup_field = "slug"
     queryset = Concierto.objects.select_related("artista", "recinto__ciudad").prefetch_related("invitados", "precios")
+
+
+class ArtistaDetalleView(generics.RetrieveAPIView):
+    """GET /api/artistas/<slug>/: descripción, redes, fechas próximas y pasadas, estadísticas de reseñas."""
+
+    serializer_class = ArtistaDetalleSerializer
+    lookup_field = "slug"
+    queryset = Artista.objects.all()
+
+
+class RecintosView(generics.ListAPIView):
+    """GET /api/recintos/?ciudad=cdmx&q=texto: los recintos con conciertos, los más activos primero."""
+
+    serializer_class = RecintoEnListaSerializer
+
+    def get_queryset(self):
+        parametros = self.request.query_params
+        hoy, cancelado = inicio_de_hoy(), Q(conciertos__estado=Concierto.Estado.CANCELADO)
+        proximos = Q(conciertos__fecha_hora__gte=hoy) & ~cancelado
+        pasados = Q(conciertos__fecha_hora__lt=hoy) & ~cancelado
+        recintos = (
+            Recinto.objects.select_related("ciudad")
+            .annotate(proximos=Count("conciertos", filter=proximos), pasados=Count("conciertos", filter=pasados))
+            .filter(Q(proximos__gt=0) | Q(pasados__gt=0))
+        )
+        if ciudad := parametros.get("ciudad"):
+            recintos = recintos.filter(ciudad__slug=ciudad)
+        if texto := parametros.get("q", "").strip():
+            recintos = recintos.filter(Q(nombre__unaccent__icontains=texto) | Q(direccion__unaccent__icontains=texto))
+        return recintos.order_by("-proximos", "nombre", "pk")
+
+
+class RecintoDetalleView(generics.RetrieveAPIView):
+    """GET /api/recintos/<slug>/: dirección, calificación y sus conciertos próximos y pasados."""
+
+    serializer_class = RecintoDetalleSerializer
+    lookup_field = "slug"
+    queryset = Recinto.objects.select_related("ciudad")

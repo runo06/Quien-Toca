@@ -104,3 +104,49 @@ class ModeracionTests(DatosDeResenas):
         self.assertEqual(self.reporte.estado, Reporte.Estado.DESCARTADO)
         self.otro.refresh_from_db()
         self.assertEqual(self.otro.estado, Reporte.Estado.PENDIENTE)
+
+
+class PaginasDeArtistaYRecintoTests(DatosDeResenas):
+    def setUp(self):
+        super().setUp()
+        crear = Resena.objects.create
+        crear(usuario=self.sofia, concierto=self.pasado, general=5, show=4, recinto=3, texto=TEXTO, asistio=True)
+        crear(usuario=self.diego, concierto=self.pasado_gdl, general=3, texto=TEXTO, asistio=True)
+        self.cometas.enlaces = {"instagram": "https://instagram.com/cometas", "musicbrainz": "https://musicbrainz.org/x"}
+        self.cometas.descripcion = "Banda de rock de la Ciudad de México."
+        self.cometas.save()
+
+    def test_artista_con_fechas_y_estadisticas(self):
+        datos = self.client.get(f"/api/artistas/{self.cometas.slug}/").data
+        self.assertEqual(datos["descripcion"], "Banda de rock de la Ciudad de México.")
+        self.assertEqual(datos["enlaces"], {"instagram": "https://instagram.com/cometas"})  # musicbrainz no se muestra
+        self.assertEqual([c["slug"] for c in datos["proximos"]], [self.futuro.slug])
+        self.assertEqual([c["slug"] for c in datos["pasados"]], [self.pasado_gdl.slug, self.pasado.slug])  # recientes primero
+        self.assertEqual((datos["pasados"][0]["resenas"], datos["pasados"][0]["promedio"]), (1, 3.0))
+        self.assertEqual(datos["pasados_total"], 2)
+        self.assertEqual(datos["calificacion"]["promedio"], 4.0)
+        self.assertEqual([d["total"] for d in datos["distribucion"]], [1, 0, 1, 0, 0])  # 5, 4, 3, 2 y 1 estrellas
+        self.assertEqual(
+            [(c["ciudad"], c["promedio"]) for c in datos["por_ciudad"]], [("Ciudad de México", 5.0), ("Guadalajara", 3.0)]
+        )
+
+    def test_artista_inexistente(self):
+        self.assertEqual(self.client.get("/api/artistas/no-existe/").status_code, 404)
+
+    def test_lista_de_recintos_por_ciudad_y_texto(self):
+        datos = self.client.get("/api/recintos/", {"ciudad": "cdmx"}).data["resultados"]
+        self.assertEqual([(r["nombre"], r["proximos"], r["pasados"]) for r in datos], [("Auditorio Nacional", 1, 1)])
+        self.assertEqual(self.client.get("/api/recintos/", {"q": "estadio"}).data["total"], 1)
+        self.assertEqual(self.client.get("/api/recintos/", {"q": "3 de marzo", "ciudad": "cdmx"}).data["total"], 0)
+
+    def test_recinto_sin_conciertos_no_aparece(self):
+        type(self.auditorio).objects.create(nombre="Foro Vacío", ciudad=self.auditorio.ciudad)
+        nombres = [r["nombre"] for r in self.client.get("/api/recintos/").data["resultados"]]
+        self.assertNotIn("Foro Vacío", nombres)
+
+    def test_recinto_con_su_calificacion_y_conciertos(self):
+        datos = self.client.get(f"/api/recintos/{self.auditorio.slug}/").data
+        self.assertEqual(datos["calificacion"], {"promedio": 3.0, "total": 1})
+        self.assertEqual([c["slug"] for c in datos["proximos"]], [self.futuro.slug])
+        self.assertEqual([c["slug"] for c in datos["pasados"]], [self.pasado.slug])
+        self.assertEqual(datos["pasados"][0]["artista"]["nombre"], "Los Cometas del Sur")

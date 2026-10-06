@@ -22,6 +22,7 @@ export default function Encabezado() {
         <Link className="marca" to="/">¿Quién toca?</Link>
         <nav aria-label="Principal">
           <Link to="/">Cartelera</Link>
+          <Link to="/recintos">Recintos</Link>
           {usuario ? (
             <>
               <span className="barra__usuario">Hola, {usuario.nombre}</span>

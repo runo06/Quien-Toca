@@ -219,6 +219,13 @@ export const obtenerConciertos = (parametros, signal) => pedir('/conciertos/', {
 
 export const obtenerConcierto = (slug, signal) => pedir(`/conciertos/${encodeURIComponent(slug)}/`, { signal });
 
+export const obtenerArtista = (slug, signal) => pedir(`/artistas/${encodeURIComponent(slug)}/`, { signal });
+
+/** parametros: { ciudad, q, pagina } */
+export const obtenerRecintos = (parametros, signal) => pedir('/recintos/', { parametros, signal });
+
+export const obtenerRecinto = (slug, signal) => pedir(`/recintos/${encodeURIComponent(slug)}/`, { signal });
+
 // --- Cuentas ---
 export const registrarse = async (datos) =>
   abrirSesion(await enviar('/cuentas/registro/', { metodo: 'POST', cuerpo: datos }));

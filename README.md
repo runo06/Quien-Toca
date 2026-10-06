@@ -67,6 +67,9 @@ docker compose exec backend python manage.py createsuperuser
 | `GET /api/ciudades/` | — |
 | `GET /api/conciertos/` | `ciudad`, `q`, `desde`, `hasta` (AAAA-MM-DD), `orden` (`fecha`, `precio` o `nota`), `pagina` |
 | `GET /api/conciertos/<slug>/` | — (incluye la calificación del artista y del recinto) |
+| `GET /api/artistas/<slug>/` | — descripción, redes, fechas próximas y pasadas, estadísticas de reseñas |
+| `GET /api/recintos/` | `ciudad`, `q`, `pagina` (solo recintos con conciertos) |
+| `GET /api/recintos/<slug>/` | — calificación, conciertos próximos y pasados |
 | `POST /api/cuentas/registro/` | `nombre`, `email`, `password` → usuario y tokens |
 | `POST /api/cuentas/entrar/` | `email`, `password` → usuario y tokens |
 | `POST /api/cuentas/renovar/` | `refresh` → tokens nuevos (el refresh viejo queda anulado) |
@@ -92,6 +95,18 @@ docker compose exec backend python manage.py importar_ticketmaster -v 2   # list
 
 No duplica: si el concierto ya existe lo actualiza, y nunca borra los que ya
 pasaron. Los conciertos capturados a mano no se tocan.
+
+### Descripciones de artistas (Wikipedia)
+
+```powershell
+docker compose exec backend python manage.py actualizar_descripciones
+```
+
+Busca en Wikipedia en español a los artistas nuevos (y renueva cada 30 días):
+primero por los enlaces que manda Ticketmaster y, si no, por nombre, aceptando
+solo artículos de música con el título idéntico. Si sale la persona equivocada o
+no hay artículo, en el panel puedes pegar el artículo correcto o escribir la
+descripción a mano (queda fija). Corre cada noche después de la importación.
 
 ### Pruebas
 
@@ -120,7 +135,7 @@ backend/
 │   ├── models.py        Ciudad, Recinto, Artista, Concierto, PrecioZona
 │   ├── admin.py         panel de administración
 │   ├── views.py         API REST (serializers.py, urls.py, paginacion.py)
-│   ├── importacion/     cliente de Ticketmaster, traducción e importador
+│   ├── importacion/     Ticketmaster (cliente, traducción, importador) y Wikipedia
 │   └── tests/           pruebas con respuestas de ejemplo (sin llamar a la API)
 ├── cuentas/             registro, entrar, salir (JWT con simplejwt)
 └── resenas/             Resena, VotoUtil, Reporte; promedios en calificaciones.py
@@ -129,9 +144,10 @@ frontend/src/
 ├── api.js               llamadas al backend: sesión JWT y reintentos mientras el servidor despierta
 ├── contexto/            ciudades compartidas
 ├── hooks/               usarPeticion, usarCartelera, usarResenas, usarSesion
-├── paginas/             Inicio, Concierto, Entrar/Registro, No encontrada
+├── paginas/             Inicio, Concierto, Artista, Recinto, Recintos, Entrar/Registro
 ├── componentes/         Boleto, SelectorCiudad, Taquilla, Cartel, AvisoDespertando...
-│   └── resenas/         Opiniones, TarjetaResena, FormularioResena, Estrellas...
+│   ├── resenas/         Opiniones, TarjetaResena, FormularioResena, Estrellas...
+│   └── perfil/          piezas de las páginas de artista y recinto
 ├── utilidades/          fechas, rangos, textos
 └── estilos/base.css     tokens y estilos del prototipo
 .github/workflows/       pruebas en cada push e importación nocturna

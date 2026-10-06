@@ -38,3 +38,26 @@ def anotar_calificacion_artista(conciertos):
         promedio_artista=Subquery(del_artista.annotate(v=Avg("general")).values("v")),
         resenas_artista=Coalesce(Subquery(del_artista.annotate(v=Count("id")).values("v")), 0),
     )
+
+
+def distribucion(resenas):
+    """Cuántas reseñas dieron 5, 4, 3, 2 y 1 estrellas: [{"estrellas": 5, "total": 12}, ...]."""
+    conteo = dict(resenas.values_list("general").annotate(n=Count("id")).order_by())
+    return [{"estrellas": n, "total": conteo.get(n, 0)} for n in (5, 4, 3, 2, 1)]
+
+
+def por_ciudad(artista):
+    """Promedio general del artista en cada ciudad donde lo han reseñado, la mejor primero."""
+    filas = (
+        Resena.objects.visibles().filter(concierto__artista=artista)
+        .values("concierto__recinto__ciudad__nombre", "concierto__recinto__ciudad__slug")
+        .annotate(promedio=Avg("general"), total=Count("id"))
+        .order_by("-promedio", "-total")
+    )
+    return [
+        {
+            "ciudad": f["concierto__recinto__ciudad__nombre"], "slug": f["concierto__recinto__ciudad__slug"],
+            "promedio": redondear(f["promedio"]), "total": f["total"],
+        }
+        for f in filas
+    ]

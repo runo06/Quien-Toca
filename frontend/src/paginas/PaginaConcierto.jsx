@@ -47,6 +47,8 @@ export default function PaginaConcierto() {
   const ciudad = concierto.recinto.ciudad;
   // Si venimos de la cartelera, "volver" regresa con los mismos filtros.
   const volverA = ubicacion.state?.desde ?? `/${ciudad.slug}`;
+  // Si llegó desde la página de un artista o recinto, "volver" regresa ahí.
+  const textoVolver = volverA.startsWith('/artista/') || volverA.startsWith('/recinto/') ? 'Volver' : `Cartelera de ${ciudad.nombre}`;
 
   return (
     <>
@@ -54,7 +56,7 @@ export default function PaginaConcierto() {
         <div className="centro">
           <Link className="volver" to={volverA}>
             <Icono nombre="atras" />
-            Cartelera de {ciudad.nombre}
+            {textoVolver}
           </Link>
           {concierto.estado === 'cancelado' && (
             <p className="aviso-estado" role="status">Este concierto fue cancelado.</p>

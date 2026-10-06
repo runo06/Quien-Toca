@@ -1,0 +1,33 @@
+/* Páginas de artista y de recinto, con las piezas del prototipo (cabeza, paradas, barras). */
+.perfil { padding-block: 8px clamp(40px, 6vw, 64px); }
+.perfil__seccion { margin-top: clamp(40px, 6vw, 64px); }
+.perfil__seccion > h2 { margin-bottom: 18px; }
+.perfil__tipo { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lima); }
+.perfil .cabeza h1 { margin-top: 8px; }
+.descripcion { margin-top: 18px; max-width: 40em; font-size: 1.05rem; line-height: 1.6; color: var(--papel-2); }
+.descripcion + .letra-chica { margin-top: 8px; }
+.descripcion + .letra-chica a { color: var(--papel-2); }
+.redes { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+.redes a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1.5px solid var(--corte); border-radius: 999px; font-weight: 500; font-size: 0.92rem; text-decoration: none; }
+.redes a:hover { border-color: var(--papel-3); }
+.cabeza--sin-cartel { grid-template-columns: minmax(0, 1fr); }
+
+.parada__nota { display: inline-flex; align-items: center; gap: 4px; }
+.parada__nota svg { width: 14px; height: 14px; color: var(--lima); }
+.parada--pasada .parada__dia { font-size: 1.15rem; }
+
+/* Estadísticas */
+.estadisticas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 28px clamp(28px, 5vw, 56px); align-items: start; padding: clamp(22px, 3vw, 32px); background: var(--boleto); border-radius: 14px; }
+.estadisticas .subtitulo:first-child { margin-top: 0; }
+.barra-fila--conteo { grid-template-columns: 70px minmax(0, 1fr) 30px; }
+
+/* Directorio de recintos */
+.recintos__lista { margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.recinto-tarjeta { display: flex; flex-direction: column; gap: 6px; height: 100%; padding: 20px 22px; background: var(--boleto); border: 2px solid var(--boleto); border-radius: 6px; text-decoration: none; }
+.recinto-tarjeta:hover { border-color: var(--papel-3); }
+.recinto-tarjeta h2 { font-size: 1.5rem; overflow-wrap: anywhere; }
+.recinto-tarjeta p { font-size: 0.9rem; color: var(--papel-2); overflow-wrap: anywhere; }
+.recinto-tarjeta strong { margin-top: auto; padding-top: 6px; font-size: 0.92rem; color: var(--lima); }
+.recinto-tarjeta strong.sin { color: var(--papel-3); }
+.ficha--enlace { display: inline-flex; align-items: center; text-decoration: none; }
+.ficha--enlace[aria-current="page"] { background: var(--papel); border-color: var(--papel); color: var(--noche); font-weight: 600; }

@@ -199,3 +199,20 @@ class AtraccionQueEsElRecintoTests(SimpleTestCase):
         self.assertEqual(limpiar_titulo("Compañía Nacional de Danza Gala Balanchine, 6+. Ingreso 16:30 h"), "Compañía Nacional de Danza Gala Balanchine")
         self.assertEqual(limpiar_titulo("Blink-182"), "Blink-182")
         self.assertEqual(limpiar_titulo("Sum 41"), "Sum 41")
+
+
+class EnlacesTests(SimpleTestCase):
+    def test_guarda_el_primer_enlace_util_de_cada_tipo(self):
+        from conciertos.importacion.traducir import leer_enlaces
+
+        atraccion = {"externalLinks": {
+            "instagram": [{"url": "https://www.instagram.com/rosanaoficial/"}, {"url": "https://otra"}],
+            "itunes": [{"url": "https://music.apple.com/x"}],  # no se usa
+            "musicbrainz": [{"id": "abc", "url": "https://musicbrainz.org/artist/abc"}],
+            "homepage": [{"url": "javascript:alert(1)"}],  # solo http(s)
+        }}
+        self.assertEqual(leer_enlaces(atraccion), {
+            "instagram": "https://www.instagram.com/rosanaoficial/",
+            "musicbrainz": "https://musicbrainz.org/artist/abc",
+        })
+        self.assertEqual(leer_enlaces({}), {})

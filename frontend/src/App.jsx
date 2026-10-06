@@ -6,9 +6,12 @@ import Encabezado from './componentes/Encabezado.jsx';
 import PiePagina from './componentes/PiePagina.jsx';
 import { ProveedorCiudades } from './contexto/ciudades.jsx';
 import PaginaConcierto from './paginas/PaginaConcierto.jsx';
+import PaginaArtista from './paginas/PaginaArtista.jsx';
 import PaginaCuenta from './paginas/PaginaCuenta.jsx';
 import PaginaInicio from './paginas/PaginaInicio.jsx';
 import PaginaNoEncontrada from './paginas/PaginaNoEncontrada.jsx';
+import PaginaRecinto from './paginas/PaginaRecinto.jsx';
+import PaginaRecintos from './paginas/PaginaRecintos.jsx';
 import RedirigirACiudad from './paginas/RedirigirACiudad.jsx';
 
 /**
@@ -46,6 +49,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<RedirigirACiudad />} />
             <Route path="/concierto/:slug" element={<PaginaConcierto />} />
+            <Route path="/artista/:slug" element={<PaginaArtista />} />
+            <Route path="/recinto/:slug" element={<PaginaRecinto />} />
+            <Route path="/recintos" element={<PaginaRecintos />} />
+            <Route path="/recintos/:ciudad" element={<PaginaRecintos />} />
             <Route path="/entrar" element={<PaginaCuenta modo="entrar" key="entrar" />} />
             <Route path="/registro" element={<PaginaCuenta modo="registro" key="registro" />} />
             <Route path="/:ciudad" element={<PaginaInicio />} />

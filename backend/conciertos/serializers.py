@@ -3,11 +3,18 @@
 Hay versiones "breves" para listas (solo lo que dibuja el boleto) y una de
 detalle para la página del concierto.
 """
-from django.db.models import Count, Q
+from django.db.models import Avg, Count, Q
 from django.utils import timezone
 from rest_framework import serializers
 
-from resenas.calificaciones import calificacion_artista, calificacion_recinto
+from resenas.calificaciones import (
+    anotar_calificacion_artista,
+    calificacion_artista,
+    calificacion_recinto,
+    distribucion,
+    por_ciudad,
+)
+from resenas.models import Resena
 
 from .models import Artista, Ciudad, Concierto, PrecioZona, Recinto, inicio_de_hoy
 
@@ -145,3 +152,116 @@ class ConciertoDetalleSerializer(ConciertoListaSerializer):
         futuras = list(otras.filter(fecha_hora__gte=hoy).order_by("fecha_hora"))
         pasadas = list(otras.filter(fecha_hora__lt=hoy).order_by("-fecha_hora")[:5])
         return OtraFechaSerializer(pasadas[::-1] + futuras, many=True).data
+
+
+# --- Páginas de artista y de recinto ---
+
+ENLACES_PUBLICOS = ("homepage", "instagram", "spotify", "youtube", "tiktok", "facebook", "twitter")
+PASADOS_A_MOSTRAR = 30
+
+
+def conciertos_pasados(conciertos):
+    """Los que ya pasaron (no cancelados), del más reciente al más viejo, con sus reseñas visibles."""
+    return (
+        conciertos.filter(fecha_hora__lt=inicio_de_hoy())
+        .exclude(estado=Concierto.Estado.CANCELADO)
+        .select_related("artista", "recinto__ciudad")
+        .annotate(
+            n_resenas=Count("resenas", filter=Q(resenas__oculta=False)),
+            promedio_resenas=Avg("resenas__general", filter=Q(resenas__oculta=False)),
+        )
+        .order_by("-fecha_hora")
+    )
+
+
+def conciertos_proximos(conciertos):
+    return anotar_calificacion_artista(
+        conciertos.proximos().select_related("artista", "recinto__ciudad").order_by("fecha_hora", "pk")
+    )
+
+
+class ConciertoPasadoSerializer(serializers.ModelSerializer):
+    artista = ArtistaBreveSerializer()
+    recinto = RecintoBreveSerializer()
+    resenas = serializers.IntegerField(source="n_resenas")
+    promedio = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Concierto
+        fields = ["slug", "titulo", "fecha_hora", "artista", "recinto", "resenas", "promedio"]
+
+    def get_promedio(self, concierto):
+        return round(concierto.promedio_resenas, 1) if concierto.promedio_resenas is not None else None
+
+
+class ArtistaDetalleSerializer(serializers.ModelSerializer):
+    enlaces = serializers.SerializerMethodField()
+    calificacion = serializers.SerializerMethodField()
+    distribucion = serializers.SerializerMethodField()
+    por_ciudad = serializers.SerializerMethodField()
+    proximos = serializers.SerializerMethodField()
+    pasados = serializers.SerializerMethodField()
+    pasados_total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Artista
+        fields = [
+            "nombre", "slug", "genero", "imagen_url", "descripcion", "descripcion_fuente", "enlaces",
+            "calificacion", "distribucion", "por_ciudad", "proximos", "pasados", "pasados_total",
+        ]
+
+    def get_enlaces(self, artista):
+        # wiki y musicbrainz son para buscar la descripción; no se muestran.
+        return {tipo: url for tipo, url in artista.enlaces.items() if tipo in ENLACES_PUBLICOS}
+
+    def get_calificacion(self, artista):
+        return calificacion_artista(artista)
+
+    def get_distribucion(self, artista):
+        return distribucion(Resena.objects.visibles().filter(concierto__artista=artista))
+
+    def get_por_ciudad(self, artista):
+        return por_ciudad(artista)
+
+    def get_proximos(self, artista):
+        return ConciertoListaSerializer(conciertos_proximos(Concierto.objects.filter(artista=artista)), many=True).data
+
+    def get_pasados(self, artista):
+        pasados = conciertos_pasados(Concierto.objects.filter(artista=artista))[:PASADOS_A_MOSTRAR]
+        return ConciertoPasadoSerializer(pasados, many=True).data
+
+    def get_pasados_total(self, artista):
+        return conciertos_pasados(Concierto.objects.filter(artista=artista)).count()
+
+
+class RecintoEnListaSerializer(serializers.ModelSerializer):
+    ciudad = CiudadBreveSerializer()
+    proximos = serializers.IntegerField(read_only=True)  # anotaciones de la vista
+    pasados = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Recinto
+        fields = ["nombre", "slug", "direccion", "ciudad", "proximos", "pasados"]
+
+
+class RecintoDetalleSerializer(RecintoSerializer):
+    calificacion = serializers.SerializerMethodField()
+    proximos = serializers.SerializerMethodField()
+    pasados = serializers.SerializerMethodField()
+    pasados_total = serializers.SerializerMethodField()
+
+    class Meta(RecintoSerializer.Meta):
+        fields = RecintoSerializer.Meta.fields + ["calificacion", "proximos", "pasados", "pasados_total"]
+
+    def get_calificacion(self, recinto):
+        return calificacion_recinto(recinto)
+
+    def get_proximos(self, recinto):
+        return ConciertoListaSerializer(conciertos_proximos(Concierto.objects.filter(recinto=recinto)), many=True).data
+
+    def get_pasados(self, recinto):
+        pasados = conciertos_pasados(Concierto.objects.filter(recinto=recinto))[:PASADOS_A_MOSTRAR]
+        return ConciertoPasadoSerializer(pasados, many=True).data
+
+    def get_pasados_total(self, recinto):
+        return conciertos_pasados(Concierto.objects.filter(recinto=recinto)).count()
