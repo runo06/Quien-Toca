@@ -17,10 +17,10 @@ function Barras({ filas }) {
 }
 
 /** El promedio grande del artista, sus barras por aspecto y la nota del recinto. */
-export default function ResumenCalificaciones({ artista, calificacion, recinto, calificacionRecinto, hayFechasPasadas }) {
+export default function ResumenCalificaciones({ artista, calificacion, recinto, calificacionRecinto }) {
   return (
     <div>
-      {calificacion.total ? (
+      {calificacion.total > 0 && (
         <>
           <p className="promedio">
             <b>{calificacion.promedio.toFixed(1)}</b>
@@ -29,22 +29,13 @@ export default function ResumenCalificaciones({ artista, calificacion, recinto, 
           <h3 className="subtitulo">{artista} en vivo</h3>
           <Barras filas={[['Show en vivo', calificacion.show], ['Sonido', calificacion.sonido], ['Puntualidad', calificacion.puntualidad]]} />
         </>
-      ) : (
-        <>
-          <p className="subtitulo" style={{ marginTop: 0 }}>{artista} todavía no tiene reseñas</p>
-          <p className="apagado">
-            {hayFechasPasadas ? 'Sé la primera persona en contar cómo estuvo.' : 'Las reseñas se abren cuando pase su primera fecha.'}
-          </p>
-        </>
       )}
-      <h3 className="subtitulo">El recinto: {recinto}</h3>
-      {calificacionRecinto.total ? (
+      {calificacionRecinto.total > 0 && (
         <>
+          <h3 className="subtitulo">El recinto: {recinto}</h3>
           <Barras filas={[['Calificación', calificacionRecinto.promedio]]} />
           <p className="letra-chica">Según {plural(calificacionRecinto.total, 'reseña', 'reseñas')} de conciertos en este lugar.</p>
         </>
-      ) : (
-        <p className="apagado">Todavía nadie ha calificado este recinto.</p>
       )}
     </div>
   );
