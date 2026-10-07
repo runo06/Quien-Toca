@@ -81,10 +81,17 @@ docker compose exec backend python manage.py createsuperuser
 | `GET /api/resenas/mias/` | 🔒 |
 | `POST`, `DELETE /api/resenas/<id>/util/` | 🔒 "Me sirvió" (no en las propias) |
 | `POST /api/resenas/<id>/reportar/` | 🔒 `motivo`, `comentario` |
+| `POST`, `DELETE /api/artistas/<slug>/seguir/` | 🔒 seguir y dejar de seguir |
+| `POST`, `DELETE /api/conciertos/<slug>/guardar/` | 🔒 guardar y quitar |
+| `GET /api/mis-conciertos/` | 🔒 `ciudad` (sus fechas van primero) |
+| `GET`, `POST /api/sugerencias/` | 🔒 mis sugerencias · sugerir: `artista`, `ciudad`, `recinto`, `fecha`, `hora`, `url_boletos`, `comentario` |
 
 🔒 = con sesión: cabecera `Authorization: Bearer <access>`. El access dura 15 minutos y el
 refresh 30 días. Los reportes se revisan en el panel: **Reseñas › Reportes** (acciones
-"Aceptar: ocultar la reseña" y "Descartar").
+"Aceptar: ocultar la reseña" y "Descartar"). Las sugerencias de conciertos, en
+**Sugerencias** (pendientes primero): corrige el nombre si hace falta y usa "Aprobar:
+crear el concierto". Si Ticketmaster publica después ese mismo concierto, la
+importación lo adopta en vez de duplicarlo.
 
 ### Importar conciertos de Ticketmaster
 
@@ -138,13 +145,15 @@ backend/
 │   ├── importacion/     Ticketmaster (cliente, traducción, importador) y Wikipedia
 │   └── tests/           pruebas con respuestas de ejemplo (sin llamar a la API)
 ├── cuentas/             registro, entrar, salir (JWT con simplejwt)
-└── resenas/             Resena, VotoUtil, Reporte; promedios en calificaciones.py
+├── resenas/             Resena, VotoUtil, Reporte; promedios en calificaciones.py
+├── seguimiento/         artistas seguidos, conciertos guardados y "Mis conciertos"
+└── sugerencias/         conciertos sugeridos y su aprobación (aprobar.py)
 frontend/src/
 ├── App.jsx              rutas
 ├── api.js               llamadas al backend: sesión JWT y reintentos mientras el servidor despierta
 ├── contexto/            ciudades compartidas
 ├── hooks/               usarPeticion, usarCartelera, usarResenas, usarSesion
-├── paginas/             Inicio, Concierto, Artista, Recinto, Recintos, Entrar/Registro
+├── paginas/             Inicio, Concierto, Artista, Recinto(s), Mis conciertos, Sugerir, Entrar/Registro
 ├── componentes/         Boleto, SelectorCiudad, Taquilla, Cartel, AvisoDespertando...
 │   ├── resenas/         Opiniones, TarjetaResena, FormularioResena, Estrellas...
 │   └── perfil/          piezas de las páginas de artista y recinto

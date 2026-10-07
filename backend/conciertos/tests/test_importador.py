@@ -2,6 +2,7 @@ from datetime import datetime, time, timedelta, timezone as tz
 from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -120,6 +121,28 @@ class ImportacionTests(TestCase):
         self.assertEqual(manual.origen, Concierto.Origen.MANUAL)
         self.assertEqual(manual.titulo, "Banda Sierra Madre 25 años")
         self.assertIsNone(manual.id_ticketmaster)
+
+    def test_adopta_el_concierto_manual_del_mismo_dia_en_vez_de_duplicarlo(self):
+        # Una sugerencia aprobada antes de que Ticketmaster lo publicara.
+        cometas = Artista.objects.create(nombre="Los Cometas del Sur")
+        auditorio = Recinto.objects.create(nombre="Auditorio Nacional", ciudad=Ciudad.objects.get(slug="cdmx"))
+        manual = Concierto.objects.create(
+            titulo="Los Cometas del Sur", artista=cometas, recinto=auditorio,
+            fecha_hora=datetime(2026, 11, 20, 20, tzinfo=ZoneInfo("America/Mexico_City")), hora_por_confirmar=True,
+            url_boletos="https://boletera.example/cometas",
+        )
+
+        resumen = importar(self.eventos)
+
+        self.assertEqual(resumen.creados, 3)  # el de Cometas no se crea: se adopta
+        self.assertEqual(Concierto.objects.filter(artista__nombre="Los Cometas del Sur").count(), 1)
+        manual.refresh_from_db()
+        self.assertEqual(manual.origen, Concierto.Origen.TICKETMASTER)
+        self.assertEqual(manual.id_ticketmaster, "TM-COMETAS-CDMX")
+        self.assertEqual(manual.titulo, "Los Cometas del Sur - Gira Polvo de Estrellas")
+        self.assertFalse(manual.hora_por_confirmar)
+        self.assertEqual(manual.slug, "los-cometas-del-sur-cdmx-2026-11-20")  # el enlace no cambia
+        self.assertEqual(importar(cargar_eventos()).creados, 0)  # y otra noche ya lo reconoce por su id
 
     def test_vincula_artista_capturado_a_mano_en_vez_de_duplicarlo(self):
         manual = Artista.objects.create(nombre="los cometas del sur")

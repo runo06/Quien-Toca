@@ -86,6 +86,12 @@ def se_puede_resenar(concierto):
     return concierto.fecha_hora <= timezone.now() and concierto.estado != Concierto.Estado.CANCELADO
 
 
+def usuario_de(serializer):
+    """Quien pide la página, o None si no inició sesión."""
+    request = serializer.context.get("request")
+    return request.user if request and request.user.is_authenticated else None
+
+
 class OtraFechaSerializer(serializers.ModelSerializer):
     recinto = RecintoBreveSerializer()
     ya_paso = serializers.SerializerMethodField()
@@ -115,6 +121,7 @@ class ConciertoDetalleSerializer(ConciertoListaSerializer):
     otras_fechas = serializers.SerializerMethodField()
     calificacion_artista = serializers.SerializerMethodField()
     calificacion_recinto = serializers.SerializerMethodField()
+    guardado = serializers.SerializerMethodField()
     # El detalle trae la calificación completa: se quitan los campos breves de la lista.
     promedio_artista = None
     resenas_artista = None
@@ -124,8 +131,12 @@ class ConciertoDetalleSerializer(ConciertoListaSerializer):
             campo for campo in ConciertoListaSerializer.Meta.fields if campo not in ("promedio_artista", "resenas_artista")
         ] + [
             "invitados", "apertura_puertas", "url_boletos", "precios", "ya_paso", "se_puede_resenar",
-            "otras_fechas", "calificacion_artista", "calificacion_recinto",
+            "otras_fechas", "calificacion_artista", "calificacion_recinto", "guardado",
         ]
+
+    def get_guardado(self, concierto):
+        usuario = usuario_de(self)
+        return bool(usuario) and concierto.guardados.filter(usuario=usuario).exists()
 
     def get_ya_paso(self, concierto):
         return concierto.fecha_hora < inicio_de_hoy()
@@ -196,6 +207,8 @@ class ConciertoPasadoSerializer(serializers.ModelSerializer):
 
 class ArtistaDetalleSerializer(serializers.ModelSerializer):
     enlaces = serializers.SerializerMethodField()
+    seguidores = serializers.SerializerMethodField()
+    siguiendo = serializers.SerializerMethodField()
     calificacion = serializers.SerializerMethodField()
     distribucion = serializers.SerializerMethodField()
     por_ciudad = serializers.SerializerMethodField()
@@ -206,13 +219,20 @@ class ArtistaDetalleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Artista
         fields = [
-            "nombre", "slug", "genero", "imagen_url", "descripcion", "descripcion_fuente", "enlaces",
+            "nombre", "slug", "genero", "imagen_url", "descripcion", "descripcion_fuente", "enlaces", "seguidores", "siguiendo",
             "calificacion", "distribucion", "por_ciudad", "proximos", "pasados", "pasados_total",
         ]
 
     def get_enlaces(self, artista):
         # wiki y musicbrainz son para buscar la descripción; no se muestran.
         return {tipo: url for tipo, url in artista.enlaces.items() if tipo in ENLACES_PUBLICOS}
+
+    def get_seguidores(self, artista):
+        return artista.seguidores.count()
+
+    def get_siguiendo(self, artista):
+        usuario = usuario_de(self)
+        return bool(usuario) and artista.seguidores.filter(usuario=usuario).exists()
 
     def get_calificacion(self, artista):
         return calificacion_artista(artista)

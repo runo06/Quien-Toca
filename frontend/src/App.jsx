@@ -8,10 +8,12 @@ import { ProveedorCiudades } from './contexto/ciudades.jsx';
 import PaginaConcierto from './paginas/PaginaConcierto.jsx';
 import PaginaArtista from './paginas/PaginaArtista.jsx';
 import PaginaCuenta from './paginas/PaginaCuenta.jsx';
+import PaginaMisConciertos from './paginas/PaginaMisConciertos.jsx';
 import PaginaInicio from './paginas/PaginaInicio.jsx';
 import PaginaNoEncontrada from './paginas/PaginaNoEncontrada.jsx';
 import PaginaRecinto from './paginas/PaginaRecinto.jsx';
 import PaginaRecintos from './paginas/PaginaRecintos.jsx';
+import PaginaSugerir from './paginas/PaginaSugerir.jsx';
 import RedirigirACiudad from './paginas/RedirigirACiudad.jsx';
 
 /**
@@ -53,6 +55,8 @@ export default function App() {
             <Route path="/recinto/:slug" element={<PaginaRecinto />} />
             <Route path="/recintos" element={<PaginaRecintos />} />
             <Route path="/recintos/:ciudad" element={<PaginaRecintos />} />
+            <Route path="/mis-conciertos" element={<PaginaMisConciertos />} />
+            <Route path="/sugerir" element={<PaginaSugerir />} />
             <Route path="/entrar" element={<PaginaCuenta modo="entrar" key="entrar" />} />
             <Route path="/registro" element={<PaginaCuenta modo="registro" key="registro" />} />
             <Route path="/:ciudad" element={<PaginaInicio />} />

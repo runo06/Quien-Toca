@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useParams } from 'react-router';
-import { obtenerArtista } from '../api.js';
+import { obtenerArtista, seguirArtista } from '../api.js';
+import BotonAlternar from '../componentes/BotonAlternar.jsx';
 import Cartel from '../componentes/cartel/Cartel.jsx';
 import Boleto from '../componentes/inicio/Boleto.jsx';
 import MensajeError from '../componentes/MensajeError.jsx';
@@ -101,7 +103,12 @@ function ResenasDelArtista({ slug }) {
 /** /artista/:slug */
 export default function PaginaArtista() {
   const { slug } = useParams();
-  const { datos: artista, cargando, error, reintentar } = usarPeticion((signal) => obtenerArtista(slug, signal), [slug]);
+  const usuario = usarSesion();
+  // Con usuario?.id: al entrar o salir se vuelve a pedir (cambia "Siguiendo").
+  const { datos: artista, cargando, error, reintentar } = usarPeticion(
+    (signal) => obtenerArtista(slug, signal), [slug, usuario?.id],
+  );
+  const [seguidores, setSeguidores] = useState(null);
   usarTituloDocumento(artista ? `${artista.nombre} · ¿Quién toca?` : '¿Quién toca?');
 
   if (cargando) return <div className="centro pagina-estado"><p role="status" className="apagado">Cargando…</p></div>;
@@ -119,6 +126,16 @@ export default function PaginaArtista() {
         <div>
           <p className="perfil__tipo">Artista{artista.genero ? ` · ${artista.genero}` : ''}</p>
           <h1 className="cartel" id="titulo-vista" tabIndex={-1}>{artista.nombre}</h1>
+          <div className="perfil__seguir">
+            <BotonAlternar
+              key={`${artista.slug}-${artista.siguiendo}`}
+              activo={artista.siguiendo}
+              alternar={(seguir) => seguirArtista(artista.slug, seguir)}
+              alCambiar={(datos) => setSeguidores(datos.seguidores)}
+              textos={{ activo: 'Siguiendo ✓', inactivo: 'Seguir', aviso: [`Sigues a ${artista.nombre}`, `Dejaste de seguir a ${artista.nombre}`] }}
+            />
+            <span className="apagado">{plural(seguidores ?? artista.seguidores, 'seguidor', 'seguidores')}</span>
+          </div>
           {artista.descripcion && <p className="descripcion">{artista.descripcion}</p>}
           {artista.descripcion_fuente && (
             <p className="letra-chica">

@@ -7,6 +7,7 @@ import Icono from '../componentes/Icono.jsx';
 import Opiniones from '../componentes/resenas/Opiniones.jsx';
 import MensajeError from '../componentes/MensajeError.jsx';
 import { usarPeticion } from '../hooks/usarPeticion.js';
+import { usarSesion } from '../hooks/usarSesion.js';
 import { usarTituloDocumento } from '../hooks/usarTituloDocumento.js';
 import PaginaNoEncontrada from './PaginaNoEncontrada.jsx';
 import './PaginaConcierto.css';
@@ -31,9 +32,11 @@ function ConciertoCargando() {
 export default function PaginaConcierto() {
   const { slug } = useParams();
   const ubicacion = useLocation();
+  const usuario = usarSesion();
+  // Con usuario?.id: al entrar o salir se vuelve a pedir (cambia "Guardado").
   const { datos: concierto, cargando, error, reintentar, refrescar } = usarPeticion(
     (signal) => obtenerConcierto(slug, signal),
-    [slug],
+    [slug, usuario?.id],
   );
 
   usarTituloDocumento(

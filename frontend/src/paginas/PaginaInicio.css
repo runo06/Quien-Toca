@@ -24,3 +24,4 @@
 .orden { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
 .orden select { min-height: 46px; padding: 0 12px; background: var(--boleto); border: 1.5px solid var(--corte); border-radius: 10px; }
 .mas { margin-top: 22px; display: flex; justify-content: center; }
+.cartelera .sugerir { margin-top: 22px; }

@@ -31,3 +31,12 @@
 .recinto-tarjeta strong.sin { color: var(--papel-3); }
 .ficha--enlace { display: inline-flex; align-items: center; text-decoration: none; }
 .ficha--enlace[aria-current="page"] { background: var(--papel); border-color: var(--papel); color: var(--noche); font-weight: 600; }
+.perfil__seguir { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+
+/* Mis conciertos */
+.perfil .subtitulo { margin: 22px 0 12px; }
+.sugerencias { display: flex; flex-direction: column; gap: 10px; }
+.sugerencias li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 14px 18px; background: var(--boleto); border-radius: 6px; }
+.estado-sugerencia { font-size: 0.82rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1.5px solid var(--corte); }
+.estado-sugerencia--aprobada { border-color: var(--lima); color: var(--lima); }
+.estado-sugerencia--rechazada { border-color: var(--alerta); color: var(--alerta); }

@@ -25,6 +25,7 @@ export default function Encabezado() {
           <Link to="/recintos">Recintos</Link>
           {usuario ? (
             <>
+              <Link to="/mis-conciertos">Mis conciertos</Link>
               <span className="barra__usuario">Hola, {usuario.nombre}</span>
               <button type="button" className="enlace barra__salir" onClick={cerrarSesion}>Salir</button>
             </>

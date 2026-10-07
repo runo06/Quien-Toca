@@ -68,6 +68,7 @@ main { flex: 1; }
 .boton:hover { transform: translateY(-2px); }
 .boton:disabled { opacity: 0.6; cursor: progress; transform: none; }
 .boton svg { width: 18px; height: 18px; flex: none; }
+.boton--chico { min-height: 40px; padding: 0 18px; font-size: 0.92rem; }
 .boton--linea { background: none; color: var(--papel); border: 1.5px solid var(--papel); font-weight: 600; }
 .enlace { display: inline-block; padding-block: 10px; background: none; border: 0; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
 

@@ -1,4 +1,6 @@
 import { Link } from 'react-router';
+import { guardarConcierto } from '../../api.js';
+import BotonAlternar from '../BotonAlternar.jsx';
 import { fechaLarga, hora, horaSimple } from '../../utilidades/fechas.js';
 import { listaConY, subtituloDe } from '../../utilidades/texto.js';
 import Cartel from '../cartel/Cartel.jsx';
@@ -22,9 +24,17 @@ export default function CabezaConcierto({ concierto }) {
         {invitados.length > 0 && (
           <p className="invitados apagado">Con {listaConY(invitados.map((i) => i.nombre))}</p>
         )}
-        <p style={{ marginTop: 10 }}>
+        <div className="cabeza__acciones">
+          {!concierto.ya_paso && (
+            <BotonAlternar
+              key={`${concierto.slug}-${concierto.guardado}`}
+              activo={concierto.guardado}
+              alternar={(guardar) => guardarConcierto(concierto.slug, guardar)}
+              textos={{ activo: 'Guardado ✓', inactivo: 'Guardar', aviso: ['Guardado en Mis conciertos', 'Lo quitaste de Mis conciertos'] }}
+            />
+          )}
           <Link className="enlace" to={`/artista/${artista.slug}`}>Ver todo sobre {artista.nombre}</Link>
-        </p>
+        </div>
         <dl className="datos">
           <div>
             <dt>Recinto</dt>

@@ -55,3 +55,4 @@ a.parada:hover { border-color: var(--papel-3); }
   .taquilla__zonas::before { left: -11px; top: -12px; }
   .taquilla__zonas::after { left: auto; right: -11px; top: -12px; bottom: auto; }
 }
+.cabeza__acciones { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }

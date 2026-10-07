@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { plural } from '../../utilidades/texto.js';
 import MensajeError from '../MensajeError.jsx';
 import Boleto, { BoletosCargando } from './Boleto.jsx';
@@ -52,6 +53,12 @@ export default function Cartelera({ ciudad, cartelera, orden, alCambiarOrden, ha
     );
   }
 
+  const sugerir = (
+    <p className="apagado sugerir">
+      ¿Falta un concierto? <Link className="enlace" to="/sugerir">Sugiérelo</Link>
+    </p>
+  );
+
   return (
     <section className="cartelera" aria-labelledby="cuenta">
       <div className="centro">
@@ -68,6 +75,7 @@ export default function Cartelera({ ciudad, cartelera, orden, alCambiarOrden, ha
           </div>
         </div>
         {contenido}
+        {!cargando && !error && sugerir}
       </div>
     </section>
   );

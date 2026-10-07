@@ -19,7 +19,6 @@
 .util:hover { border-color: var(--papel-3); }
 .util[aria-pressed="true"] { border-color: var(--lima); color: var(--lima); }
 .tuya { font-size: 0.8rem; font-weight: 600; color: var(--sobre-lima); background: var(--lima); border-radius: 4px; padding: 2px 8px; }
-.boton--chico { min-height: 40px; padding: 0 18px; font-size: 0.92rem; }
 
 /* Sección de opiniones en la página del concierto */
 .opiniones { background: var(--noche-2); }

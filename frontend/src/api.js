@@ -255,3 +255,18 @@ export const borrarResena = (id) => pedir(`/resenas/${id}/`, { metodo: 'DELETE' 
 export const marcarMeSirvio = (id, marcar) => pedir(`/resenas/${id}/util/`, { metodo: marcar ? 'POST' : 'DELETE' });
 
 export const reportarResena = (id, datos) => pedir(`/resenas/${id}/reportar/`, { metodo: 'POST', cuerpo: datos });
+
+// --- Seguir, guardar y sugerir (con sesión) ---
+/** Devuelve { siguiendo, seguidores }. */
+export const seguirArtista = (slug, seguir) =>
+  pedir(`/artistas/${encodeURIComponent(slug)}/seguir/`, { metodo: seguir ? 'POST' : 'DELETE' });
+
+/** Devuelve { guardado }. */
+export const guardarConcierto = (slug, guardar) =>
+  pedir(`/conciertos/${encodeURIComponent(slug)}/guardar/`, { metodo: guardar ? 'POST' : 'DELETE' });
+
+export const obtenerMisConciertos = (ciudad, signal) => pedir('/mis-conciertos/', { parametros: { ciudad }, signal });
+
+export const obtenerMisSugerencias = (signal) => pedir('/sugerencias/', { signal });
+
+export const sugerirConcierto = (datos) => pedir('/sugerencias/', { metodo: 'POST', cuerpo: datos });

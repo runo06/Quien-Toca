@@ -140,6 +140,25 @@ class Importador:
             valores.update(precio_desde=datos.precio_desde, moneda=datos.moneda)
 
         if concierto is None:
+            # ¿Ya lo capturaste a mano (o se aprobó una sugerencia)? Mismo artista, ciudad y día:
+            # Ticketmaster lo adopta en vez de duplicarlo. Conserva su slug, así el enlace sigue igual.
+            manual = Concierto.objects.filter(
+                origen=Concierto.Origen.MANUAL,
+                artista=artista,
+                recinto__ciudad=valores["recinto"].ciudad,
+                fecha_hora__date=timezone.localtime(datos.fecha_hora).date(),
+            ).first()
+            if manual is not None:
+                for campo, valor in valores.items():
+                    setattr(manual, campo, valor)
+                manual.id_ticketmaster = datos.id_ticketmaster
+                manual.ids_agrupados = sorted(ids)
+                manual.origen = Concierto.Origen.TICKETMASTER
+                manual.importado_en = self.ahora
+                manual.save()
+                manual.invitados.set(invitados)
+                return "actualizados"
+
             concierto = Concierto.objects.create(
                 id_ticketmaster=datos.id_ticketmaster,
                 ids_agrupados=sorted(ids),
