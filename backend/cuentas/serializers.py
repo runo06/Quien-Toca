@@ -30,7 +30,7 @@ class RegistroSerializer(serializers.Serializer):
 
     def validate_email(self, email):
         email = email.strip().lower()
-        if Usuario.objects.filter(username=email).exists():
+        if Usuario.objects.filter(username=email).exists() or Usuario.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError("Ya hay una cuenta con este correo. Inicia sesión.")
         return email
 

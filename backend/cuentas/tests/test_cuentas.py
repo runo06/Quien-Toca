@@ -73,3 +73,25 @@ class CuentasTests(APITestCase):
         respuestas = [self.entrar(password=f"intento-{n}").status_code for n in range(11)]
         self.assertEqual(respuestas[:10], [401] * 10)
         self.assertEqual(respuestas[10], 429)
+
+
+class CuentasDelPanelTests(CuentasTests):
+    """Cuentas creadas con createsuperuser: el usuario no es el correo."""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = Usuario.objects.create_superuser("bruno", "Bruno@Correo.mx", CLAVE, first_name="Bruno")
+
+    def test_el_superusuario_entra_a_la_pagina_con_su_correo(self):
+        respuesta = self.entrar(email="bruno@correo.mx")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data["usuario"]["nombre"], "Bruno")
+        self.assertTrue(respuesta.data["usuario"]["es_editor"])  # superusuario = editor
+
+    def test_su_correo_no_se_puede_registrar_otra_vez(self):
+        respuesta = self.registrar(email="bruno@correo.mx")
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn("email", respuesta.data)
+
+    def test_con_contrasena_incorrecta_tampoco_entra(self):
+        self.assertEqual(self.entrar(email="bruno@correo.mx", password="otra-cosa-distinta").status_code, 401)
