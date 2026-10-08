@@ -93,6 +93,13 @@ refresh 30 días. Los reportes se revisan en el panel: **Reseñas › Reportes**
 crear el concierto". Si Ticketmaster publica después ese mismo concierto, la
 importación lo adopta en vez de duplicarlo.
 
+### Capturar una gira a mano
+
+En el panel, **Conciertos › Capturar gira**: el artista, el nombre de la gira y la
+boletera una sola vez, y una fila por fecha (recinto, día, hora y, si cambian,
+otra URL o el precio). Se crean todas juntas; si una fecha ya existe se marca y no
+se guarda nada hasta corregirla.
+
 ### Importar conciertos de Ticketmaster
 
 ```powershell

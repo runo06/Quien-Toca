@@ -1,0 +1,75 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
+<style>
+  .fechas-gira td, .fechas-gira th { vertical-align: top; }
+  .fechas-gira .errorlist { margin: 4px 0 0; }
+  .fechas-gira { width: 100%; }
+  .fechas-gira input[type=url] { width: 12em; }
+  .fechas-gira input[name$=precio_desde] { width: 7em; }
+  .fechas-gira .select2-container { min-width: 16em; }
+</style>
+{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+<script src="{% url 'admin:jsi18n' %}"></script>{# textos del calendario y el reloj #}
+{{ media }}
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; Capturar gira
+</div>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  <p>Llena los datos de la gira una vez y una fila por fecha. Las filas vacías se ignoran.
+     Si una fecha ya existe, se marca y no se guarda nada hasta corregirla.</p>
+
+  {% if fechas.non_form_errors %}
+    <p class="errornote">{% for error in fechas.non_form_errors %}{{ error }} {% endfor %}</p>
+  {% elif gira.errors or fechas.total_error_count %}
+    <p class="errornote">Revisa los campos marcados.</p>
+  {% endif %}
+
+  <fieldset class="module aligned">
+    <h2>La gira</h2>
+    {% for campo in gira %}
+      <div class="form-row{% if campo.errors %} errors{% endif %}">
+        {{ campo.errors }}
+        <div class="flex-container">
+          {{ campo.label_tag }} {{ campo }}
+        </div>
+        {% if campo.help_text %}<div class="help">{{ campo.help_text }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset class="module">
+    <h2>Fechas</h2>
+    {{ fechas.management_form }}
+    <table class="fechas-gira">
+      <thead><tr>
+        {% for campo in fechas.empty_form %}<th>{{ campo.label|capfirst }}</th>{% endfor %}
+      </tr></thead>
+      <tbody>
+        {% for fila in fechas %}
+          <tr>{% for campo in fila %}<td>{{ campo }}{{ campo.errors }}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="help">¿Más de {{ fechas.total_form_count }} fechas? Guarda estas y vuelve a capturar el resto.</p>
+  </fieldset>
+
+  <div class="submit-row">
+    <input type="submit" class="default" value="Crear conciertos">
+  </div>
+</form>
+{% endblock %}

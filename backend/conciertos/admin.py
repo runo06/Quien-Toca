@@ -1,5 +1,11 @@
 from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import path, reverse
+from django.utils.http import urlencode
 
+from .captura_gira import FechasFormSet, GiraForm, crear_conciertos, revisar_duplicados
 from .importacion.descripciones import actualizar_descripcion
 from .importacion.wikipedia import ErrorWikipedia, Wikipedia
 from .models import Artista, Ciudad, Concierto, PrecioZona, Recinto
@@ -80,12 +86,43 @@ class ConciertoAdmin(admin.ModelAdmin):
     date_hierarchy = "fecha_hora"
     autocomplete_fields = ["artista", "invitados", "recinto"]
     inlines = [PrecioZonaInline]
+    change_list_template = "admin/conciertos/concierto/change_list.html"  # agrega el botón "Capturar gira"
     fieldsets = [
         (None, {"fields": ["titulo", "slug", "artista", "invitados", "recinto", "gira", "genero"]}),
         ("Fecha", {"fields": ["fecha_hora", "hora_por_confirmar", "apertura_puertas", "estado"]}),
         ("Boletos", {"fields": ["url_boletos", "precio_desde", "moneda", "imagen_url"]}),
         ("Origen", {"fields": ["origen", "id_ticketmaster", "ids_agrupados", "importado_en", "creado_en", "actualizado_en"]}),
     ]
+
+    def get_urls(self):
+        propias = [
+            path("capturar-gira/", self.admin_site.admin_view(self.capturar_gira), name="conciertos_capturar_gira"),
+        ]
+        return propias + super().get_urls()  # antes que las de Django: "capturar-gira" no es un id
+
+    def capturar_gira(self, request):
+        """Los datos de la gira una vez y una fila por fecha; crea todos los conciertos de golpe."""
+        if not self.has_add_permission(request):
+            raise PermissionDenied
+        gira = GiraForm(request.POST or None)
+        fechas = FechasFormSet(request.POST or None, prefix="fechas")
+        if request.method == "POST" and gira.is_valid() and fechas.is_valid() and revisar_duplicados(
+            gira.cleaned_data["artista"], fechas
+        ):
+            creados = crear_conciertos(gira, fechas)
+            artista = gira.cleaned_data["artista"]
+            self.message_user(request, f"Se crearon {len(creados)} conciertos de {artista}.", messages.SUCCESS)
+            lista = reverse("admin:conciertos_concierto_changelist")
+            return redirect(f"{lista}?{urlencode({'q': artista.nombre})}")
+        contexto = {
+            **self.admin_site.each_context(request),
+            "title": "Capturar gira",
+            "opts": self.model._meta,
+            "gira": gira,
+            "fechas": fechas,
+            "media": self.media + gira.media + fechas.media,
+        }
+        return TemplateResponse(request, "admin/conciertos/concierto/capturar_gira.html", contexto)
 
     @admin.display(description="ciudad", ordering="recinto__ciudad__nombre")
     def ciudad(self, obj):
