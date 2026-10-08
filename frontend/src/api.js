@@ -224,6 +224,13 @@ export const obtenerArtista = (slug, signal) => pedir(`/artistas/${encodeURIComp
 /** Perfiles de artista para el buscador (también los que no tienen fechas). */
 export const buscarArtistas = (q, signal) => pedir('/artistas/', { parametros: { q }, signal });
 
+/** Artistas de Ticketmaster que aún no tenemos (se muestran; aún no se guardan). */
+export const buscarArtistasExternos = (q, signal) => pedir('/artistas/externos/', { parametros: { q }, signal });
+
+/** Crea el perfil de un artista de Ticketmaster al abrirlo. Devuelve { slug, nombre }. */
+export const abrirArtistaExterno = (idTicketmaster) =>
+  pedir(`/artistas/externos/${encodeURIComponent(idTicketmaster)}/`, { metodo: 'POST' });
+
 /** parametros: { ciudad, q, pagina } */
 export const obtenerRecintos = (parametros, signal) => pedir('/recintos/', { parametros, signal });
 

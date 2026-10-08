@@ -216,3 +216,6 @@ class EnlacesTests(SimpleTestCase):
             "musicbrainz": "https://musicbrainz.org/artist/abc",
         })
         self.assertEqual(leer_enlaces({}), {})
+        # Solo la cuenta: se arma la dirección.
+        arrobas = {"externalLinks": {"twitter": [{"url": "@_VicenteFdez"}], "facebook": [{"url": "@vicente"}]}}
+        self.assertEqual(leer_enlaces(arrobas), {"twitter": "https://x.com/_VicenteFdez"})

@@ -210,12 +210,22 @@ def artista_desde_titulo(titulo, ciudad):
     return DatosArtista(id_ticketmaster=None, nombre=(nombre or titulo)[:200], genero="", imagen_url="")
 
 
+# A veces Ticketmaster manda solo la cuenta ("@_VicenteFdez") en vez de la dirección.
+PERFILES_POR_ARROBA = {
+    "twitter": "https://x.com/{}", "instagram": "https://www.instagram.com/{}", "tiktok": "https://www.tiktok.com/@{}",
+}
+
+
 def leer_enlaces(atraccion):
     """{"instagram": url, ...}: el primer enlace de cada tipo que nos sirve."""
     enlaces = {}
     for tipo, lista in (atraccion.get("externalLinks") or {}).items():
-        url = next((e.get("url") for e in lista or [] if e.get("url")), None)
-        if tipo in TIPOS_DE_ENLACE and url and url.startswith(("http://", "https://")):
+        url = next((e.get("url").strip() for e in lista or [] if e.get("url")), None)
+        if tipo not in TIPOS_DE_ENLACE or not url:
+            continue
+        if re.fullmatch(r"@[\w.]{1,40}", url) and tipo in PERFILES_POR_ARROBA:
+            url = PERFILES_POR_ARROBA[tipo].format(url[1:])
+        if url.startswith(("http://", "https://")):
             enlaces[tipo] = url
     return enlaces
 

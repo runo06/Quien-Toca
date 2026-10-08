@@ -68,6 +68,8 @@ docker compose exec backend python manage.py createsuperuser
 | `GET /api/conciertos/` | `ciudad`, `q`, `desde`, `hasta` (AAAA-MM-DD), `orden` (`fecha`, `precio` o `nota`), `pagina` |
 | `GET /api/conciertos/<slug>/` | — (incluye la calificación del artista y del recinto) |
 | `GET /api/artistas/` | `q` — perfiles para el buscador (también artistas sin fechas) |
+| `GET /api/artistas/externos/` | `q` — artistas de Ticketmaster que aún no tenemos (no se guardan) |
+| `POST /api/artistas/externos/<id>/` | crea el perfil al abrirlo (imagen, género, redes y descripción) |
 | `GET /api/artistas/<slug>/` | — descripción, redes, fechas próximas y pasadas, estadísticas de reseñas |
 | `GET /api/recintos/` | `ciudad`, `q`, `pagina` (solo recintos con conciertos) |
 | `GET /api/recintos/<slug>/` | — calificación, conciertos próximos y pasados |

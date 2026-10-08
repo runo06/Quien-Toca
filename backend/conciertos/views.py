@@ -4,9 +4,13 @@ from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
 
 from resenas.calificaciones import anotar_calificacion_artista
 
+from .importacion import artistas_externos
 from .models import Artista, Ciudad, Concierto, Recinto, inicio_de_hoy
 from .serializers import (
     ArtistaDetalleSerializer,
@@ -170,3 +174,29 @@ class ArtistasView(generics.ListAPIView):
             )
             .order_by("parecido", "-proximos", "nombre")[: self.LIMITE]
         )
+
+
+class ArtistasExternosView(APIView):
+    """GET /api/artistas/externos/?q=texto: artistas de Ticketmaster que aún no tenemos.
+    POST /api/artistas/externos/<id>/: crea su perfil (cuando alguien lo abre) y devuelve su slug."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "externos"
+
+    def get(self, request, id_ticketmaster=None):
+        texto = request.query_params.get("q", "").strip()
+        if len(texto) < 3:
+            return Response([])
+        try:
+            return Response(artistas_externos.buscar(texto))
+        except artistas_externos.SinTicketmaster:
+            return Response([])  # sin Ticketmaster solo se ven los artistas que ya tenemos
+
+    def post(self, request, id_ticketmaster):
+        try:
+            artista = artistas_externos.crear(id_ticketmaster)
+        except artistas_externos.SinTicketmaster:
+            return Response({"detail": "Ticketmaster no respondió. Inténtalo en un momento."}, status=503)
+        if artista is None:
+            return Response({"detail": "No encontramos a ese artista."}, status=404)
+        return Response({"slug": artista.slug, "nombre": artista.nombre})

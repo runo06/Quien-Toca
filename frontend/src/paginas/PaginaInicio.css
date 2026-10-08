@@ -45,3 +45,6 @@
 .encontrado__foto canvas, .encontrado__foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .encontrado strong { display: block; line-height: 1.25; overflow-wrap: anywhere; }
 .encontrado .apagado { font-size: 0.85rem; }
+button.encontrado { width: 100%; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+button.encontrado:disabled { cursor: progress; opacity: 0.7; }
+.encontrado__abriendo { margin-left: auto; font-size: 0.85rem; color: var(--lima); }

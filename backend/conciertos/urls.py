@@ -8,6 +8,9 @@ urlpatterns = [
     path("conciertos/", views.ConciertosView.as_view(), name="conciertos"),
     path("conciertos/<slug:slug>/", views.ConciertoDetalleView.as_view(), name="concierto-detalle"),
     path("artistas/", views.ArtistasView.as_view(), name="artistas"),
+    # Antes que artistas/<slug>/: "externos" no es el slug de un artista.
+    path("artistas/externos/", views.ArtistasExternosView.as_view(), name="artistas-externos"),
+    path("artistas/externos/<str:id_ticketmaster>/", views.ArtistasExternosView.as_view(), name="artista-externo"),
     path("artistas/<slug:slug>/", views.ArtistaDetalleView.as_view(), name="artista-detalle"),
     path("recintos/", views.RecintosView.as_view(), name="recintos"),
     path("recintos/<slug:slug>/", views.RecintoDetalleView.as_view(), name="recinto-detalle"),

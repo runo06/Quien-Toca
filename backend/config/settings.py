@@ -133,7 +133,8 @@ REST_FRAMEWORK = {
     # La API solo acepta tokens JWT (cabecera Authorization). El panel /admin usa su propia sesión.
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
     # Freno a quien prueba contraseñas o crea cuentas en masa (por IP).
-    "DEFAULT_THROTTLE_RATES": {"cuentas": "10/min", "sugerencias": "20/day"},
+    # externos: búsquedas de artistas en Ticketmaster (la API permite 5,000 al día en total).
+    "DEFAULT_THROTTLE_RATES": {"cuentas": "10/min", "sugerencias": "20/day", "externos": "30/min"},
 }
 
 # JWT: el token de acceso dura poco; el de renovación se cambia por uno nuevo en

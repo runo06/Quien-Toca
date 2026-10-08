@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 
 URL_EVENTOS = "https://app.ticketmaster.com/discovery/v2/events.json"
+URL_ARTISTAS = "https://app.ticketmaster.com/discovery/v2/attractions"  # "attractions" = artistas
 TAMANO_PAGINA = 200          # el máximo que acepta la API por página
 LIMITE_PROFUNDIDAD = 1000    # la API exige que tamaño × página sea menor a 1,000
 PAUSA_ENTRE_LLAMADAS = 0.25  # 4 llamadas por segundo, debajo del límite de 5
@@ -33,11 +34,11 @@ class ClienteTicketmaster:
         self.pausa = pausa
         self.llamadas = 0
 
-    def _pedir(self, parametros, reintentos=3):
+    def _pedir(self, parametros, reintentos=3, url=URL_EVENTOS):
         parametros = {**parametros, "apikey": self.clave}
         for intento in range(reintentos):
             time.sleep(self.pausa)
-            respuesta = self.sesion.get(URL_EVENTOS, params=parametros, timeout=30)
+            respuesta = self.sesion.get(url, params=parametros, timeout=30)
             self.llamadas += 1
             if respuesta.status_code == 429:
                 time.sleep(2 ** intento)
@@ -81,3 +82,20 @@ class ClienteTicketmaster:
             for evento in eventos:
                 vistos.setdefault(evento["id"], evento)
         return list(vistos.values()), cortadas
+
+    def buscar_artistas(self, texto, cuantos=10):
+        """Artistas de música cuyo nombre se parece al texto (tengan o no conciertos)."""
+        datos = self._pedir(
+            {"keyword": texto, "classificationName": "music", "size": cuantos, "locale": "*"},
+            url=f"{URL_ARTISTAS}.json",
+        )
+        return (datos.get("_embedded") or {}).get("attractions", [])
+
+    def artista(self, id_ticketmaster):
+        """Un artista por su id; None si no existe."""
+        try:
+            return self._pedir({"locale": "*"}, url=f"{URL_ARTISTAS}/{id_ticketmaster}.json")
+        except requests.HTTPError as error:
+            if error.response is not None and error.response.status_code == 404:
+                return None
+            raise
