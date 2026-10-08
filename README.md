@@ -93,9 +93,25 @@ refresh 30 días. Los reportes se revisan en el panel: **Reseñas › Reportes**
 crear el concierto". Si Ticketmaster publica después ese mismo concierto, la
 importación lo adopta en vez de duplicarlo.
 
-### Capturar una gira a mano
+### Rol Editor: editar desde la página
 
-En el panel, **Conciertos › Capturar gira**: el artista, el nombre de la gira y la
+Quien esté en el grupo **Editores** (en el panel: **Usuarios** › la persona ›
+Grupos) ve **Editar** en el menú de la página y puede:
+
+- **Capturar una gira**: el artista, la gira y la boletera una vez, y una fila por
+  fecha (ciudad, recinto con autocompletado, día, hora y, si cambian, otra boletera
+  o precio). Si el artista o el recinto no existen, se agregan ahí mismo. Si una
+  fecha ya existe, se marca y no se guarda ninguna.
+- **Editar o cancelar** un concierto (botón **Editar** en su página). En los de
+  Ticketmaster solo se cambia lo que la importación no sobrescribe cada noche.
+- **Aprobar o rechazar sugerencias**, corrigiendo el nombre si hace falta.
+- **Moderar reseñas reportadas**: ocultarlas o descartar el reporte.
+
+El servidor revisa el rol en cada petición (`/api/edicion/…`); sin él responde 403.
+
+### Capturar una gira en el panel
+
+También en el panel, **Conciertos › Capturar gira**: el artista, el nombre de la gira y la
 boletera una sola vez, y una fila por fecha (recinto, día, hora y, si cambian,
 otra URL o el precio). Se crean todas juntas; si una fecha ya existe se marca y no
 se guarda nada hasta corregirla.
@@ -154,7 +170,8 @@ backend/
 ├── cuentas/             registro, entrar, salir (JWT con simplejwt)
 ├── resenas/             Resena, VotoUtil, Reporte; promedios en calificaciones.py
 ├── seguimiento/         artistas seguidos, conciertos guardados y "Mis conciertos"
-└── sugerencias/         conciertos sugeridos y su aprobación (aprobar.py)
+├── sugerencias/         conciertos sugeridos y su aprobación (aprobar.py)
+└── edicion/             rol Editor (roles.py) y su API: giras, edición, revisiones
 frontend/src/
 ├── App.jsx              rutas
 ├── api.js               llamadas al backend: sesión JWT y reintentos mientras el servidor despierta
@@ -163,7 +180,8 @@ frontend/src/
 ├── paginas/             Inicio, Concierto, Artista, Recinto(s), Mis conciertos, Sugerir, Entrar/Registro
 ├── componentes/         Boleto, SelectorCiudad, Taquilla, Cartel, AvisoDespertando...
 │   ├── resenas/         Opiniones, TarjetaResena, FormularioResena, Estrellas...
-│   └── perfil/          piezas de las páginas de artista y recinto
+│   ├── perfil/          piezas de las páginas de artista y recinto
+│   └── edicion/         Autocompletar, FormularioGira, Revisiones (rol Editor)
 ├── utilidades/          fechas, rangos, textos
 └── estilos/base.css     tokens y estilos del prototipo
 .github/workflows/       pruebas en cada push e importación nocturna

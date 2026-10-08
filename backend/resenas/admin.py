@@ -1,10 +1,10 @@
 from django.contrib import admin, messages
 from django.db.models import Count, Q
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.text import Truncator
 
+from . import moderacion
 from .models import Reporte, Resena
 
 
@@ -104,16 +104,10 @@ class ReporteAdmin(admin.ModelAdmin):
 
     @admin.action(description="Aceptar: ocultar la reseña")
     def aceptar(self, request, queryset):
-        # set(): los ids se leen ya; la consulta del filtro "pendientes" cambia al actualizar.
-        ids = set(queryset.values_list("resena_id", flat=True))
-        Resena.objects.filter(pk__in=ids).update(oculta=True)
-        # Todos los reportes pendientes de esas reseñas quedan resueltos, no solo los seleccionados.
-        resueltos = Reporte.objects.filter(resena__in=ids, estado=Reporte.Estado.PENDIENTE).update(
-            estado=Reporte.Estado.ACEPTADO, revisado=timezone.now()
-        )
-        self.message_user(request, f"{len(ids)} reseña(s) ocultas; {resueltos} reporte(s) resueltos.", messages.SUCCESS)
+        ocultas, resueltos = moderacion.aceptar(queryset)
+        self.message_user(request, f"{ocultas} reseña(s) ocultas; {resueltos} reporte(s) resueltos.", messages.SUCCESS)
 
     @admin.action(description="Descartar: la reseña está bien")
     def descartar(self, request, queryset):
-        n = queryset.update(estado=Reporte.Estado.DESCARTADO, revisado=timezone.now())
+        n = moderacion.descartar(queryset)
         self.message_user(request, f"{n} reporte(s) descartados.", messages.SUCCESS)

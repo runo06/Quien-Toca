@@ -66,43 +66,52 @@ def momento(fecha, hora):
     return datetime.combine(fecha, hora or time(0), tzinfo=ZoneInfo(settings.TIME_ZONE))
 
 
+def concierto_existente(artista, recinto, fecha):
+    """El concierto del mismo artista, ciudad y día, si ya está (para no duplicarlo)."""
+    return Concierto.objects.filter(artista=artista, recinto__ciudad=recinto.ciudad, fecha_hora__date=fecha).first()
+
+
+@transaction.atomic
+def crear_gira(comunes, filas):
+    """Crea un concierto por fila, todos o ninguno.
+
+    comunes: artista, gira, url_boletos, imagen_url, genero.
+    filas: recinto, fecha, hora (o None), url_boletos (o vacío) y precio_desde (o None).
+    """
+    artista = comunes["artista"]
+    return [
+        Concierto.objects.create(
+            titulo=artista.nombre,
+            artista=artista,
+            gira=comunes.get("gira", ""),
+            genero=comunes.get("genero") or artista.genero,
+            imagen_url=comunes.get("imagen_url", ""),
+            recinto=fila["recinto"],
+            fecha_hora=momento(fila["fecha"], fila.get("hora")),
+            hora_por_confirmar=fila.get("hora") is None,
+            url_boletos=fila.get("url_boletos") or comunes["url_boletos"],
+            precio_desde=fila.get("precio_desde"),
+            origen=Concierto.Origen.MANUAL,
+        )
+        for fila in filas
+    ]
+
+
+# --- Para la pantalla del panel (formularios de Django) ---
+
 def revisar_duplicados(artista, formset):
-    """Marca las filas que ya existen (mismo artista, ciudad y día). Devuelve True si no hay."""
+    """Marca las filas que ya existen. Devuelve True si no hay ninguna."""
     sin_duplicados = True
     for formulario in formset.forms:
         datos = formulario.cleaned_data
         if not datos:
             continue
-        existente = Concierto.objects.filter(
-            artista=artista, recinto__ciudad=datos["recinto"].ciudad, fecha_hora__date=datos["fecha"]
-        ).first()
-        if existente:
+        if existente := concierto_existente(artista, datos["recinto"], datos["fecha"]):
             url = reverse("admin:conciertos_concierto_change", args=[existente.pk])
             formulario.add_error("fecha", format_html('Ya existe: <a href="{}">{}</a>', url, existente))
             sin_duplicados = False
     return sin_duplicados
 
 
-@transaction.atomic
 def crear_conciertos(gira, formset):
-    """Crea un concierto por fila llena, todos o ninguno."""
-    comunes = gira.cleaned_data
-    creados = []
-    for formulario in formset.forms:
-        datos = formulario.cleaned_data
-        if not datos:
-            continue
-        creados.append(Concierto.objects.create(
-            titulo=comunes["artista"].nombre,
-            artista=comunes["artista"],
-            gira=comunes["gira"],
-            genero=comunes["genero"] or comunes["artista"].genero,
-            imagen_url=comunes["imagen_url"],
-            recinto=datos["recinto"],
-            fecha_hora=momento(datos["fecha"], datos["hora"]),
-            hora_por_confirmar=datos["hora"] is None,
-            url_boletos=datos["url_boletos"] or comunes["url_boletos"],
-            precio_desde=datos["precio_desde"],
-            origen=Concierto.Origen.MANUAL,
-        ))
-    return creados
+    return crear_gira(gira.cleaned_data, [f.cleaned_data for f in formset.forms if f.cleaned_data])

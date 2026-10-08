@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { guardarConcierto } from '../../api.js';
+import { usarSesion } from '../../hooks/usarSesion.js';
 import BotonAlternar from '../BotonAlternar.jsx';
 import { fechaLarga, hora, horaSimple } from '../../utilidades/fechas.js';
 import { listaConY, subtituloDe } from '../../utilidades/texto.js';
@@ -9,6 +10,7 @@ import Cartel from '../cartel/Cartel.jsx';
 export default function CabezaConcierto({ concierto }) {
   const { artista, invitados, recinto, fecha_hora, hora_por_confirmar, apertura_puertas, genero, imagen_url } = concierto;
   const subtitulo = subtituloDe(concierto);
+  const usuario = usarSesion();
 
   return (
     <div className="cabeza">
@@ -36,6 +38,7 @@ export default function CabezaConcierto({ concierto }) {
             />
           )}
           <Link className="enlace" to={`/artista/${artista.slug}`}>Ver todo sobre {artista.nombre}</Link>
+          {usuario?.es_editor && <Link className="enlace" to={`/editar/concierto/${concierto.slug}`}>Editar</Link>}
         </div>
         <dl className="datos">
           <div>

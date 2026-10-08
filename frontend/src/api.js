@@ -270,3 +270,43 @@ export const obtenerMisConciertos = (ciudad, signal) => pedir('/mis-conciertos/'
 export const obtenerMisSugerencias = (signal) => pedir('/sugerencias/', { signal });
 
 export const sugerirConcierto = (datos) => pedir('/sugerencias/', { metodo: 'POST', cuerpo: datos });
+
+/** Vuelve a pedir los datos de la cuenta (p. ej. si le diste o quitaste el rol de editor). */
+export async function refrescarUsuario() {
+  if (!sesion) return;
+  try {
+    const usuario = await pedir('/cuentas/yo/');
+    if (sesion) guardarSesion({ ...sesion, usuario });
+  } catch {
+    // sin conexión: se queda lo que había
+  }
+}
+
+// --- Edición (rol Editor) ---
+export const obtenerResumenEdicion = (signal) => pedir('/edicion/', { signal });
+
+export const buscarArtistasEdicion = (q, signal) => pedir('/edicion/artistas/', { parametros: { q }, signal });
+
+export const crearArtistaEdicion = (nombre) => pedir('/edicion/artistas/', { metodo: 'POST', cuerpo: { nombre } });
+
+export const buscarRecintosEdicion = (q, ciudad, signal) => pedir('/edicion/recintos/', { parametros: { q, ciudad }, signal });
+
+export const crearRecintoEdicion = (datos) => pedir('/edicion/recintos/', { metodo: 'POST', cuerpo: datos });
+
+export const capturarGira = (datos) => pedir('/edicion/giras/', { metodo: 'POST', cuerpo: datos });
+
+export const obtenerConciertoEdicion = (slug, signal) => pedir(`/edicion/conciertos/${encodeURIComponent(slug)}/`, { signal });
+
+export const editarConcierto = (slug, datos) =>
+  pedir(`/edicion/conciertos/${encodeURIComponent(slug)}/`, { metodo: 'PATCH', cuerpo: datos });
+
+export const obtenerSugerenciasEdicion = (signal) => pedir('/edicion/sugerencias/', { signal });
+
+/** accion: 'aprobar' ({ artista, recinto } corregidos) o 'rechazar' ({ motivo }). */
+export const revisarSugerencia = (id, accion, datos = {}) =>
+  pedir(`/edicion/sugerencias/${id}/${accion}/`, { metodo: 'POST', cuerpo: datos });
+
+export const obtenerReportesEdicion = (signal) => pedir('/edicion/reportes/', { signal });
+
+/** accion: 'aceptar' (oculta la reseña) o 'descartar'. */
+export const revisarReporte = (id, accion) => pedir(`/edicion/reportes/${id}/${accion}/`, { metodo: 'POST' });

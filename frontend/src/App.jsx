@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { refrescarUsuario } from './api.js';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router';
 import AvisoDespertando from './componentes/AvisoDespertando.jsx';
 import AvisoFlotante from './componentes/AvisoFlotante.jsx';
@@ -8,6 +9,8 @@ import { ProveedorCiudades } from './contexto/ciudades.jsx';
 import PaginaConcierto from './paginas/PaginaConcierto.jsx';
 import PaginaArtista from './paginas/PaginaArtista.jsx';
 import PaginaCuenta from './paginas/PaginaCuenta.jsx';
+import PaginaEditar from './paginas/PaginaEditar.jsx';
+import PaginaEditarConcierto from './paginas/PaginaEditarConcierto.jsx';
 import PaginaMisConciertos from './paginas/PaginaMisConciertos.jsx';
 import PaginaInicio from './paginas/PaginaInicio.jsx';
 import PaginaNoEncontrada from './paginas/PaginaNoEncontrada.jsx';
@@ -41,6 +44,9 @@ function GestorDeEnfoque() {
 }
 
 export default function App() {
+  // Al abrir la página se actualizan los datos de la cuenta (p. ej. si ganó o perdió el rol de editor).
+  useEffect(() => { refrescarUsuario(); }, []);
+
   return (
     <BrowserRouter>
       <ProveedorCiudades>
@@ -57,6 +63,9 @@ export default function App() {
             <Route path="/recintos/:ciudad" element={<PaginaRecintos />} />
             <Route path="/mis-conciertos" element={<PaginaMisConciertos />} />
             <Route path="/sugerir" element={<PaginaSugerir />} />
+            <Route path="/editar" element={<PaginaEditar />} />
+            <Route path="/editar/concierto/:slug" element={<PaginaEditarConcierto />} />
+            <Route path="/editar/:seccion" element={<PaginaEditar />} />
             <Route path="/entrar" element={<PaginaCuenta modo="entrar" key="entrar" />} />
             <Route path="/registro" element={<PaginaCuenta modo="registro" key="registro" />} />
             <Route path="/:ciudad" element={<PaginaInicio />} />

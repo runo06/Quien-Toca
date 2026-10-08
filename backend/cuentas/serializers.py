@@ -6,15 +6,21 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as ErrorDeDjango
 from rest_framework import serializers
 
+from edicion.roles import es_editor
+
 Usuario = get_user_model()
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
     nombre = serializers.CharField(source="first_name")
+    es_editor = serializers.SerializerMethodField()  # para mostrar la sección de edición
 
     class Meta:
         model = Usuario
-        fields = ["id", "nombre", "email"]
+        fields = ["id", "nombre", "email", "es_editor"]
+
+    def get_es_editor(self, usuario):
+        return es_editor(usuario)
 
 
 class RegistroSerializer(serializers.Serializer):

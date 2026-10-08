@@ -49,7 +49,7 @@ export default function Encabezado() {
 
   // "Cartelera" se marca en la portada de cualquier ciudad, no solo en "/".
   const activo = ({ isActive }) => (isActive ? 'activo' : undefined);
-  const enCartelera = !/^\/(recintos?|mis-conciertos|artista|concierto|sugerir|entrar|registro)(\/|$)/.test(ubicacion.pathname);
+  const enCartelera = !/^\/(recintos?|mis-conciertos|artista|concierto|sugerir|entrar|registro|editar)(\/|$)/.test(ubicacion.pathname);
 
   return (
     <header className="barra" ref={barra}>
@@ -67,6 +67,7 @@ export default function Encabezado() {
             <li><NavLink to="/" className={() => (enCartelera ? 'activo' : undefined)}>Cartelera</NavLink></li>
             <li><NavLink to="/recintos" className={activo}>Recintos</NavLink></li>
             {usuario && <li><NavLink to="/mis-conciertos" className={activo}>Mis conciertos</NavLink></li>}
+            {usuario?.es_editor && <li><NavLink to="/editar" className={activo}>Editar</NavLink></li>}
           </ul>
           <div className="barra__cuenta">
             {usuario ? (
