@@ -17,7 +17,9 @@ export default function CabezaConcierto({ concierto }) {
       </div>
       <div>
         <p className="cuando">
-          {fechaLarga(fecha_hora)}, {hora_por_confirmar ? 'hora por confirmar' : hora(fecha_hora)}
+          {fechaLarga(fecha_hora)},{' '}
+          {/* La hora no se parte ("8:00" en un renglón y "p.m." en otro). */}
+          <span style={{ whiteSpace: 'nowrap' }}>{hora_por_confirmar ? 'hora por confirmar' : hora(fecha_hora)}</span>
         </p>
         <h1 className="cartel" id="titulo-vista" tabIndex={-1}>{artista.nombre}</h1>
         {subtitulo && <p className="gira-nombre">{subtitulo}</p>}

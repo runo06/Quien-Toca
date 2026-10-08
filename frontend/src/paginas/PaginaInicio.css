@@ -4,8 +4,12 @@
 .titular { font-family: var(--f-cartel); font-weight: 400; font-size: clamp(3.3rem, 10.5vw, 9.25rem); line-height: 1.02; text-transform: uppercase; letter-spacing: 0.01em; overflow-wrap: anywhere; }
 .titular:focus { outline: none; }
 .titular__linea { display: block; }
-.ciudad { display: inline-flex; align-items: center; gap: 0.12em; padding: 0 0 0.02em; margin: 0; background: none; border: 0; border-bottom: 0.07em solid var(--lima); font: inherit; letter-spacing: inherit; text-transform: inherit; line-height: 1; text-align: left; }
-.ciudad svg { width: 0.4em; height: 0.4em; flex: none; transition: transform 0.15s; }
+/* En línea (no inline-flex): así el nombre se parte como texto normal y el subrayado lo sigue. */
+.ciudad { display: inline; padding: 0; margin: 0; background: none; border: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; line-height: inherit; text-align: left; text-decoration: underline; text-decoration-color: var(--lima); text-decoration-thickness: 0.07em; text-underline-offset: 0.1em; }
+.ciudad__fin { white-space: nowrap; }
+/* inline-block corta el subrayado heredado del botón */
+.ciudad__pregunta { display: inline-block; margin-left: 0.04em; color: var(--papel); }
+.ciudad svg { display: inline-block; width: 0.4em; height: 0.4em; margin-left: 0.12em; vertical-align: 0.12em; transition: transform 0.15s; }
 .ciudad[aria-expanded="true"] svg { transform: rotate(180deg); }
 .ciudades { position: absolute; z-index: 5; top: calc(100% + 10px); left: 0; width: min(100%, 360px); display: flex; flex-direction: column; padding: 8px; background: var(--boleto-2); border: 1px solid var(--corte); border-radius: 12px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
 .ciudades__op { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 48px; padding: 10px 14px; background: none; border: 0; border-radius: 8px; text-align: left; font-weight: 600; font-size: 1.05rem; }
@@ -25,3 +29,9 @@
 .orden select { min-height: 46px; padding: 0 12px; background: var(--boleto); border: 1.5px solid var(--corte); border-radius: 10px; }
 .mas { margin-top: 22px; display: flex; justify-content: center; }
 .cartelera .sugerir { margin-top: 22px; }
+
+/* Teléfono: las cuatro fechas en una cuadrícula de 2×2 en vez de una columna larga */
+@media (max-width: 480px) {
+  .filtros .fichas { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .filtros .ficha { padding: 0 10px; font-size: 0.92rem; text-align: center; }
+}

@@ -39,6 +39,10 @@ export default function SelectorCiudad({ ciudades, actual, alElegir }) {
     if (slug !== actual.slug) alElegir(slug);
   }
 
+  const palabras = actual.nombre.split(' ');
+  const ultima = palabras.pop();
+  const inicio = palabras.length ? `${palabras.join(' ')} ` : '';
+
   return (
     <div className="portada__titular">
       <h1 className="titular" id="titulo-vista" tabIndex={-1}>
@@ -53,10 +57,14 @@ export default function SelectorCiudad({ ciudades, actual, alElegir }) {
             onClick={() => setAbierto((a) => !a)}
           >
             <span className="solo-lector">Cambiar de ciudad. Ciudad actual: </span>
-            {actual.nombre}
-            <Icono nombre="abajo" />
+            {inicio}
+            {/* La última palabra, la flecha y el "?" van juntos: nunca queda el "?" solo en un renglón. */}
+            <span className="ciudad__fin">
+              {ultima}<Icono nombre="abajo" />
+              {/* Dentro del bloque que no se parte, pero sin subrayado y oculto al lector (es puntuación). */}
+              <span className="ciudad__pregunta" aria-hidden="true">?</span>
+            </span>
           </button>
-          ?
         </span>
       </h1>
       <div className="ciudades" id="ciudad-lista" ref={lista} hidden={!abierto}>
