@@ -205,6 +205,14 @@ class ConciertoPasadoSerializer(serializers.ModelSerializer):
         return round(concierto.promedio_resenas, 1) if concierto.promedio_resenas is not None else None
 
 
+class ArtistaEnListaSerializer(serializers.ModelSerializer):
+    proximos = serializers.IntegerField(read_only=True)  # anotación de la vista
+
+    class Meta:
+        model = Artista
+        fields = ["nombre", "slug", "genero", "imagen_url", "proximos"]
+
+
 class ArtistaDetalleSerializer(serializers.ModelSerializer):
     enlaces = serializers.SerializerMethodField()
     seguidores = serializers.SerializerMethodField()

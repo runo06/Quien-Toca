@@ -10,6 +10,7 @@ import PaginaConcierto from './paginas/PaginaConcierto.jsx';
 import PaginaArtista from './paginas/PaginaArtista.jsx';
 import PaginaCuenta from './paginas/PaginaCuenta.jsx';
 import PaginaEditar from './paginas/PaginaEditar.jsx';
+import PaginaEditarArtista from './paginas/PaginaEditarArtista.jsx';
 import PaginaEditarConcierto from './paginas/PaginaEditarConcierto.jsx';
 import PaginaMisConciertos from './paginas/PaginaMisConciertos.jsx';
 import PaginaInicio from './paginas/PaginaInicio.jsx';
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/sugerir" element={<PaginaSugerir />} />
             <Route path="/editar" element={<PaginaEditar />} />
             <Route path="/editar/concierto/:slug" element={<PaginaEditarConcierto />} />
+            <Route path="/editar/artista/:slug" element={<PaginaEditarArtista />} />
             <Route path="/editar/:seccion" element={<PaginaEditar />} />
             <Route path="/entrar" element={<PaginaCuenta modo="entrar" key="entrar" />} />
             <Route path="/registro" element={<PaginaCuenta modo="registro" key="registro" />} />

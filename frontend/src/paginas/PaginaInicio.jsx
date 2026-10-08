@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import FranjaNoVendemos from '../componentes/FranjaNoVendemos.jsx';
 import MensajeError from '../componentes/MensajeError.jsx';
+import ArtistasEncontrados from '../componentes/inicio/ArtistasEncontrados.jsx';
 import Buscador from '../componentes/inicio/Buscador.jsx';
 import Cartelera from '../componentes/inicio/Cartelera.jsx';
 import FichasFecha from '../componentes/inicio/FichasFecha.jsx';
@@ -92,6 +93,7 @@ export default function PaginaInicio() {
           </div>
         </div>
       </section>
+      <ArtistasEncontrados texto={texto} />
       <Cartelera
         ciudad={ciudad}
         cartelera={cartelera}

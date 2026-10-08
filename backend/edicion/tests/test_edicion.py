@@ -170,3 +170,59 @@ class RevisionTests(EdicionTests):
         resena.refresh_from_db()
         reporte.refresh_from_db()
         self.assertEqual((resena.oculta, reporte.estado), (False, "descartado"))
+
+
+class PerfilDeArtistaTests(EdicionTests):
+    def setUp(self):
+        super().setUp()
+        self.como(self.editora)
+
+    def test_alta_de_un_artista_sin_conciertos_con_su_perfil(self):
+        respuesta = self.client.post("/api/edicion/artistas/", {
+            "nombre": "Los Músicos de José", "genero": "Rock", "imagen_url": "https://img.mx/jose.jpg",
+            "descripcion": "Banda de rock de Guanajuato.", "enlaces": {"instagram": "https://instagram.com/jose"},
+        }, format="json")
+        self.assertEqual(respuesta.status_code, 201, respuesta.data)
+        artista = Artista.objects.get(nombre="Los Músicos de José")
+        self.assertTrue(artista.descripcion_fija)  # la escribió una persona
+        # Su perfil es público aunque no tenga conciertos, y sale en el buscador.
+        self.client.force_authenticate(None)
+        perfil = self.client.get(f"/api/artistas/{artista.slug}/").data
+        self.assertEqual((perfil["descripcion"], perfil["proximos"]), ("Banda de rock de Guanajuato.", []))
+        busqueda = self.client.get("/api/artistas/", {"q": "musicos de jose"}).data
+        self.assertEqual([(a["nombre"], a["proximos"]) for a in busqueda], [("Los Músicos de José", 0)])
+
+    def test_no_duplica_nombres_ni_acepta_enlaces_raros(self):
+        self.assertEqual(self.client.post("/api/edicion/artistas/", {"nombre": "los cometas del sur"}, format="json").status_code, 200)
+        url = f"/api/edicion/artistas/{self.cometas.slug}/"
+        self.assertEqual(self.client.patch(url, {"nombre": "Marea Roja"}, format="json").status_code, 200)
+        Artista.objects.create(nombre="Banda Uno")
+        self.assertEqual(self.client.patch(url, {"nombre": "banda uno"}, format="json").status_code, 400)
+        self.assertEqual(self.client.patch(url, {"enlaces": {"myspace": "https://x.mx"}}, format="json").status_code, 400)
+        self.assertEqual(self.client.patch(url, {"enlaces": {"instagram": "no es url"}}, format="json").status_code, 400)
+        self.assertEqual(self.client.patch(url, {"wikipedia": "https://www.google.com"}, format="json").status_code, 400)
+
+    def test_editar_conserva_los_enlaces_internos_y_borrar_descripcion_la_libera(self):
+        self.cometas.enlaces = {"musicbrainz": "https://musicbrainz.org/artist/x", "instagram": "https://ig.mx/viejo"}
+        self.cometas.descripcion, self.cometas.descripcion_fija = "Escrita a mano.", True
+        self.cometas.save()
+        url = f"/api/edicion/artistas/{self.cometas.slug}/"
+        self.client.patch(url, {"enlaces": {"spotify": "https://open.spotify.com/artist/x"}, "descripcion": ""}, format="json")
+        self.cometas.refresh_from_db()
+        self.assertEqual(self.cometas.enlaces, {"musicbrainz": "https://musicbrainz.org/artist/x", "spotify": "https://open.spotify.com/artist/x"})
+        self.assertFalse(self.cometas.descripcion_fija)  # vacía: la búsqueda de la noche la llenará
+
+    def test_pegar_un_articulo_busca_la_descripcion_al_momento(self):
+        from unittest.mock import patch
+
+        from conciertos.importacion.wikipedia import Resumen
+
+        resumen = Resumen(titulo="Cometas", texto="Banda de Monterrey.", url="https://es.wikipedia.org/wiki/Cometas")
+        with patch("conciertos.importacion.wikipedia.Wikipedia.buscar", return_value=resumen):
+            self.client.patch(f"/api/edicion/artistas/{self.cometas.slug}/", {"wikipedia": "https://es.wikipedia.org/wiki/Cometas"}, format="json")
+        self.cometas.refresh_from_db()
+        self.assertEqual((self.cometas.descripcion, self.cometas.descripcion_fuente), ("Banda de Monterrey.", "https://es.wikipedia.org/wiki/Cometas"))
+
+    def test_sin_rol_no_edita_perfiles(self):
+        self.como(self.sofia)
+        self.assertEqual(self.client.patch(f"/api/edicion/artistas/{self.cometas.slug}/", {"nombre": "X"}, format="json").status_code, 403)

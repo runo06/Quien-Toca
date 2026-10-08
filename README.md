@@ -67,6 +67,7 @@ docker compose exec backend python manage.py createsuperuser
 | `GET /api/ciudades/` | — |
 | `GET /api/conciertos/` | `ciudad`, `q`, `desde`, `hasta` (AAAA-MM-DD), `orden` (`fecha`, `precio` o `nota`), `pagina` |
 | `GET /api/conciertos/<slug>/` | — (incluye la calificación del artista y del recinto) |
+| `GET /api/artistas/` | `q` — perfiles para el buscador (también artistas sin fechas) |
 | `GET /api/artistas/<slug>/` | — descripción, redes, fechas próximas y pasadas, estadísticas de reseñas |
 | `GET /api/recintos/` | `ciudad`, `q`, `pagina` (solo recintos con conciertos) |
 | `GET /api/recintos/<slug>/` | — calificación, conciertos próximos y pasados |
@@ -102,6 +103,10 @@ Grupos) ve **Editar** en el menú de la página y puede:
   fecha (ciudad, recinto con autocompletado, día, hora y, si cambian, otra boletera
   o precio). Si el artista o el recinto no existen, se agregan ahí mismo. Si una
   fecha ya existe, se marca y no se guarda ninguna.
+- **Agregar artistas** que no están en la cartelera (tienen perfil aunque no tengan
+  fechas) y **editar el perfil** de cualquiera: imagen, descripción, artículo de
+  Wikipedia y redes. Una descripción escrita a mano queda fija; si se borra, se
+  vuelve a buscar en Wikipedia.
 - **Editar o cancelar** un concierto (botón **Editar** en su página). En los de
   Ticketmaster solo se cambia lo que la importación no sobrescribe cada noche.
 - **Aprobar o rechazar sugerencias**, corrigiendo el nombre si hace falta.

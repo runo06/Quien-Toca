@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("", views.ResumenView.as_view(), name="edicion"),
     path("artistas/", views.ArtistasView.as_view(), name="edicion-artistas"),
+    path("artistas/<slug:slug>/", views.ArtistaView.as_view(), name="edicion-artista"),
     path("recintos/", views.RecintosView.as_view(), name="edicion-recintos"),
     path("giras/", views.GiraView.as_view(), name="edicion-gira"),
     path("conciertos/<slug:slug>/", views.ConciertoView.as_view(), name="edicion-concierto"),

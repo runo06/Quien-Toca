@@ -221,6 +221,9 @@ export const obtenerConcierto = (slug, signal) => pedir(`/conciertos/${encodeURI
 
 export const obtenerArtista = (slug, signal) => pedir(`/artistas/${encodeURIComponent(slug)}/`, { signal });
 
+/** Perfiles de artista para el buscador (también los que no tienen fechas). */
+export const buscarArtistas = (q, signal) => pedir('/artistas/', { parametros: { q }, signal });
+
 /** parametros: { ciudad, q, pagina } */
 export const obtenerRecintos = (parametros, signal) => pedir('/recintos/', { parametros, signal });
 
@@ -287,7 +290,14 @@ export const obtenerResumenEdicion = (signal) => pedir('/edicion/', { signal });
 
 export const buscarArtistasEdicion = (q, signal) => pedir('/edicion/artistas/', { parametros: { q }, signal });
 
-export const crearArtistaEdicion = (nombre) => pedir('/edicion/artistas/', { metodo: 'POST', cuerpo: { nombre } });
+/** Basta el nombre (desde el autocompletado) o el perfil completo. */
+export const crearArtistaEdicion = (datos) =>
+  pedir('/edicion/artistas/', { metodo: 'POST', cuerpo: typeof datos === 'string' ? { nombre: datos } : datos });
+
+export const obtenerArtistaEdicion = (slug, signal) => pedir(`/edicion/artistas/${encodeURIComponent(slug)}/`, { signal });
+
+export const editarArtista = (slug, datos) =>
+  pedir(`/edicion/artistas/${encodeURIComponent(slug)}/`, { metodo: 'PATCH', cuerpo: datos });
 
 export const buscarRecintosEdicion = (q, ciudad, signal) => pedir('/edicion/recintos/', { parametros: { q, ciudad }, signal });
 

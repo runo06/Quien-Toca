@@ -30,3 +30,9 @@
 .cita-resena { margin: 0; padding: 14px 16px; border-left: 3px solid var(--corte); display: flex; flex-direction: column; gap: 8px; }
 .cita-resena p { white-space: pre-line; }
 .etiqueta-motivo { color: var(--alerta); }
+
+/* Perfil de artista: vista previa de la imagen junto a los datos */
+.perfil-edicion { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 20px; align-items: start; }
+.perfil-edicion__foto { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; }
+.perfil-edicion__foto canvas, .perfil-edicion__foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 560px) { .perfil-edicion { grid-template-columns: 96px minmax(0, 1fr); } }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { obtenerArtista, seguirArtista } from '../api.js';
 import BotonAlternar from '../componentes/BotonAlternar.jsx';
 import Cartel from '../componentes/cartel/Cartel.jsx';
@@ -135,6 +135,7 @@ export default function PaginaArtista() {
               textos={{ activo: 'Siguiendo ✓', inactivo: 'Seguir', aviso: [`Sigues a ${artista.nombre}`, `Dejaste de seguir a ${artista.nombre}`] }}
             />
             <span className="apagado">{plural(seguidores ?? artista.seguidores, 'seguidor', 'seguidores')}</span>
+            {usuario?.es_editor && <Link className="enlace" to={`/editar/artista/${artista.slug}`}>Editar perfil</Link>}
           </div>
           {artista.descripcion && <p className="descripcion">{artista.descripcion}</p>}
           {artista.descripcion_fuente && (

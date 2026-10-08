@@ -141,3 +141,70 @@ class ReporteRevisionSerializer(serializers.ModelSerializer):
     def get_concierto(self, reporte):
         c = reporte.resena.concierto
         return {"slug": c.slug, "artista": c.artista.nombre, "ciudad": c.recinto.ciudad.nombre, "fecha_hora": c.fecha_hora}
+
+
+# --- Perfil de un artista (alta y edición) ---
+
+class ArtistaEdicionSerializer(serializers.ModelSerializer):
+    """Alta o edición del perfil. Si escribes la descripción a mano queda fija (la búsqueda
+    automática no la cambia); si la borras, se vuelve a buscar en Wikipedia."""
+
+    class Meta:
+        model = Artista
+        fields = [
+            "id", "nombre", "slug", "genero", "imagen_url", "descripcion", "descripcion_fuente",
+            "wikipedia", "enlaces", "descripcion_fija",
+        ]
+        read_only_fields = ["slug", "descripcion_fuente", "descripcion_fija"]
+
+    def validate_nombre(self, nombre):
+        nombre = nombre.strip()
+        repetido = Artista.objects.filter(nombre__unaccent__iexact=nombre)
+        if self.instance:
+            repetido = repetido.exclude(pk=self.instance.pk)
+        if repetido.exists():
+            raise serializers.ValidationError("Ya hay un artista con ese nombre.")
+        return nombre
+
+    def validate_enlaces(self, enlaces):
+        from conciertos.serializers import ENLACES_PUBLICOS
+
+        if not isinstance(enlaces, dict):
+            raise serializers.ValidationError("Formato inválido.")
+        limpios = {}
+        campo_url = serializers.URLField()
+        for tipo, url in enlaces.items():
+            if tipo not in ENLACES_PUBLICOS:
+                raise serializers.ValidationError(f"Tipo de enlace desconocido: {tipo}.")
+            if url := str(url or "").strip():
+                limpios[tipo] = campo_url.run_validation(url)
+        return limpios
+
+    def validate_wikipedia(self, url):
+        from conciertos.importacion.wikipedia import articulo_de_url
+
+        if url and not articulo_de_url(url):
+            raise serializers.ValidationError("Pega la dirección de un artículo de Wikipedia.")
+        return url
+
+    def guardar_descripcion(self, artista, datos):
+        if "descripcion" in datos:
+            # Escrita a mano: fija. Vacía: que la búsqueda automática la llene.
+            artista.descripcion_fija = bool(datos["descripcion"].strip())
+            artista.descripcion_fuente = ""
+            artista.descripcion_revisada = None
+            artista.save(update_fields=["descripcion_fija", "descripcion_fuente", "descripcion_revisada"])
+
+    def create(self, datos):
+        # Los enlaces de wiki y musicbrainz (los que manda Ticketmaster) no se tocan aquí.
+        artista = super().create(datos)
+        self.guardar_descripcion(artista, datos)
+        return artista
+
+    def update(self, artista, datos):
+        if "enlaces" in datos:
+            privados = {t: u for t, u in artista.enlaces.items() if t in ("wiki", "musicbrainz")}
+            datos["enlaces"] = {**privados, **datos["enlaces"]}
+        artista = super().update(artista, datos)
+        self.guardar_descripcion(artista, datos)
+        return artista

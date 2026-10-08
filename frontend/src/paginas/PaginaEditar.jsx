@@ -1,6 +1,7 @@
 import { Link, NavLink, useLocation, useParams } from 'react-router';
 import { obtenerResumenEdicion } from '../api.js';
 import FormularioGira from '../componentes/edicion/FormularioGira.jsx';
+import GestionArtistas from '../componentes/edicion/GestionArtistas.jsx';
 import { RevisarReportes, RevisarSugerencias } from '../componentes/edicion/Revisiones.jsx';
 import { usarPeticion } from '../hooks/usarPeticion.js';
 import { usarSesion } from '../hooks/usarSesion.js';
@@ -11,6 +12,7 @@ import './PaginaCuenta.css';
 
 const SECCIONES = {
   gira: { titulo: 'Capturar gira', Componente: FormularioGira },
+  artistas: { titulo: 'Artistas', Componente: GestionArtistas },
   sugerencias: { titulo: 'Sugerencias', Componente: RevisarSugerencias },
   reportes: { titulo: 'Reportes de reseñas', Componente: RevisarReportes },
 };
@@ -54,6 +56,7 @@ function Contenido() {
       <h1 className="cartel t-seccion" id="titulo-vista" tabIndex={-1}>Editar</h1>
       <nav className="pestanas" aria-label="Secciones de edición">
         <NavLink to="/editar" end>Capturar gira</NavLink>
+        <NavLink to="/editar/artistas">Artistas</NavLink>
         <NavLink to="/editar/sugerencias">Sugerencias {pendientes(resumen.datos?.sugerencias_pendientes)}</NavLink>
         <NavLink to="/editar/reportes">Reportes {pendientes(resumen.datos?.reportes_pendientes)}</NavLink>
       </nav>

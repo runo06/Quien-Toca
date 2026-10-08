@@ -1,6 +1,6 @@
 from datetime import date
 
-from django.db.models import Count, F, Q
+from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.http import JsonResponse
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
@@ -10,6 +10,7 @@ from resenas.calificaciones import anotar_calificacion_artista
 from .models import Artista, Ciudad, Concierto, Recinto, inicio_de_hoy
 from .serializers import (
     ArtistaDetalleSerializer,
+    ArtistaEnListaSerializer,
     CiudadSerializer,
     ConciertoDetalleSerializer,
     ConciertoListaSerializer,
@@ -135,3 +136,37 @@ class RecintoDetalleView(generics.RetrieveAPIView):
     serializer_class = RecintoDetalleSerializer
     lookup_field = "slug"
     queryset = Recinto.objects.select_related("ciudad")
+
+
+class ArtistasView(generics.ListAPIView):
+    """GET /api/artistas/?q=texto: perfiles de artista para el buscador (también los que no tienen fechas).
+
+    Primero el nombre exacto, luego los que empiezan igual y después los que tienen más fechas.
+    """
+
+    serializer_class = ArtistaEnListaSerializer
+    pagination_class = None
+    LIMITE = 6
+
+    def get_queryset(self):
+        texto = self.request.query_params.get("q", "").strip()
+        if len(texto) < 2:
+            return Artista.objects.none()
+        hoy = inicio_de_hoy()
+        parecido = Case(
+            When(nombre__unaccent__iexact=texto, then=Value(0)),
+            When(nombre__unaccent__istartswith=texto, then=Value(1)),
+            default=Value(2),
+            output_field=IntegerField(),
+        )
+        return (
+            Artista.objects.filter(nombre__unaccent__icontains=texto)
+            .annotate(
+                parecido=parecido,
+                proximos=Count(
+                    "conciertos",
+                    filter=Q(conciertos__fecha_hora__gte=hoy) & ~Q(conciertos__estado=Concierto.Estado.CANCELADO),
+                ),
+            )
+            .order_by("parecido", "-proximos", "nombre")[: self.LIMITE]
+        )

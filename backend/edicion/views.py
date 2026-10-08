@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from conciertos.captura_gira import crear_gira
+from conciertos.importacion.descripciones import actualizar_descripcion
+from conciertos.importacion.wikipedia import ErrorWikipedia, Wikipedia
 from conciertos.models import Artista, Concierto, Recinto
 from conciertos.serializers import ConciertoListaSerializer
 from resenas import moderacion
@@ -14,6 +16,7 @@ from sugerencias.models import Sugerencia
 
 from .roles import EsEditor
 from .serializers import (
+    ArtistaEdicionSerializer,
     ArtistaOpcionSerializer,
     ConciertoEdicionSerializer,
     GiraSerializer,
@@ -39,12 +42,28 @@ class ResumenView(VistaDeEditor):
         })
 
 
-class ArtistasView(generics.ListCreateAPIView):
-    """GET ?q= para buscar (autocompletado); POST {nombre, genero} para dar de alta uno nuevo."""
+def buscar_descripcion_si_hace_falta(artista):
+    """Si pegaste un artículo de Wikipedia (y la descripción no es tuya), se busca en ese momento.
+    Sin artículo, la búsqueda de cada noche lo intenta por nombre."""
+    if artista.descripcion_fija or not artista.wikipedia:
+        return
+    try:
+        actualizar_descripcion(artista, Wikipedia())
+    except ErrorWikipedia:
+        pass  # sin conexión con Wikipedia: la búsqueda de la noche lo vuelve a intentar
 
-    serializer_class = ArtistaOpcionSerializer
+
+class ArtistasView(generics.ListCreateAPIView):
+    """GET ?q= para buscar (autocompletado); POST para dar de alta uno nuevo (basta el nombre)."""
+
     permission_classes = [EsEditor]
     pagination_class = None
+
+    def get_serializer_class(self):
+        return ArtistaEdicionSerializer if self.request.method == "POST" else ArtistaOpcionSerializer
+
+    def perform_create(self, serializer):
+        buscar_descripcion_si_hace_falta(serializer.save())
 
     def get_queryset(self):
         texto = self.request.query_params.get("q", "").strip()
@@ -58,6 +77,22 @@ class ArtistasView(generics.ListCreateAPIView):
         if existente := Artista.objects.filter(nombre__unaccent__iexact=nombre).first():
             return Response(self.get_serializer(existente).data, status=status.HTTP_200_OK)
         return super().create(request, *args, **kwargs)
+
+
+class ArtistaView(generics.RetrieveUpdateAPIView):
+    """GET y PATCH /api/edicion/artistas/<slug>/: nombre, imagen, descripción, Wikipedia y redes."""
+
+    serializer_class = ArtistaEdicionSerializer
+    permission_classes = [EsEditor]
+    lookup_field = "slug"
+    http_method_names = ["get", "patch", "options"]
+    queryset = Artista.objects.all()
+
+    def perform_update(self, serializer):
+        cambio_wikipedia = "wikipedia" in serializer.validated_data
+        artista = serializer.save()
+        if cambio_wikipedia:
+            buscar_descripcion_si_hace_falta(artista)
 
 
 class RecintosView(generics.ListCreateAPIView):
